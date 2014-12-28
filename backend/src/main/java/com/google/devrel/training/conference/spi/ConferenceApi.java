@@ -81,11 +81,9 @@ public class ConferenceApi {
             throw new UnauthorizedException("Authorization required");
         }
 
-        // TODO
-        // load the Profile Entity
-        String userId = ""; // TODO
-        Key key = null; // TODO
-        Profile profile = null; // TODO load the Profile entity
+        String userId = user.getUserId();
+        Key key = Key.create(Profile.class, userId);
+        Profile profile = (Profile) ofy().load().key(key).now();
         return profile;
     }
 
