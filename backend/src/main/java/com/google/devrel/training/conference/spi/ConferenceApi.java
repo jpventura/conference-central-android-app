@@ -15,6 +15,8 @@
 
 package com.google.devrel.training.conference.spi;
 
+import static com.google.devrel.training.conference.service.OfyService.ofy;
+
 import com.google.api.server.spi.config.Api;
 import com.google.api.server.spi.config.ApiMethod;
 import com.google.api.server.spi.config.ApiMethod.HttpMethod;
@@ -117,8 +119,7 @@ public class ConferenceApi {
         // userId, displayName, mainEmail and teeShirtSize
         Profile profile = new Profile(userId, displayName, mainEmail, teeShirtSize);
 
-        // TODO 3 (In Lesson 3)
-        // Save the Profile entity in the datastore
+        ofy().save().entity(profile).now();
 
         // Return the profile
         return profile;
