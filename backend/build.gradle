@@ -27,6 +27,10 @@ dependencies {
     compile 'com.google.appengine:appengine-endpoints-deps:1.9.4'
     compile 'com.googlecode.objectify:objectify:5.0.+'
     compile 'javax.servlet:servlet-api:2.5'
+    testCompile 'com.google.appengine:appengine-api-labs:1.9.4'
+    testCompile 'com.google.appengine:appengine-api-stubs:1.9.4'
+    testCompile 'com.google.appengine:appengine-testing:1.9.4'
+    testCompile 'junit:junit:4.+'
 }
 
 appengine {
