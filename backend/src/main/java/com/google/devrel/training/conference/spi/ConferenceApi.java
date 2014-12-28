@@ -93,10 +93,11 @@ public class ConferenceApi {
      * @throws UnauthorizedException when the User object is null.
      */
     @ApiMethod(name = "saveProfile", path = "profile", httpMethod = HttpMethod.POST)
-    // TODO 2 Pass the User parameter
-    public Profile saveProfile(final ProfileForm profileForm) throws UnauthorizedException {
-        // TODO 2
-        // If the user is not logged in, throw an UnauthorizedException
+    public Profile saveProfile(final User user, final ProfileForm profileForm)
+            throws UnauthorizedException {
+        if (null == user) {
+            throw new UnauthorizedException("Authorization required");
+        }
 
         TeeShirtSize teeShirtSize = TeeShirtSize.NOT_SPECIFIED;
         if (profileForm.getTeeShirtSize() != null) {
@@ -105,14 +106,12 @@ public class ConferenceApi {
 
         String displayName = profileForm.getDisplayName();
 
-        // TODO 2
-        // Get the userId and mainEmail
-        String userId = null;
-        String mainEmail = null;
+        String userId = user.getUserId();
+        String mainEmail = user.getEmail();
 
-        // TODO 2
-        // If the displayName is null, set it to default value based on the user's email
-        // by calling extractDefaultDisplayNameFromEmail(...)
+        if (null == displayName) {
+            displayName = extractDefaultDisplayNameFromEmail(mainEmail);
+        }
 
         // Create a new Profile entity from the
         // userId, displayName, mainEmail and teeShirtSize
