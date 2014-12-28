@@ -97,4 +97,19 @@ public class Profile {
     public TeeShirtSize getTeeShirtSize() {
         return teeShirtSize;
     }
+
+    /**
+     * Update the Profile with the given displayName and teeShirtSize
+     * @param displayName
+     * @param teeShirtSize
+     */
+    public void update(String displayName, TeeShirtSize teeShirtSize) {
+        if (null != displayName) {
+            this.displayName = displayName;
+        }
+
+        if (null != teeShirtSize) {
+            this.teeShirtSize = teeShirtSize;
+        }
+    }
 }
