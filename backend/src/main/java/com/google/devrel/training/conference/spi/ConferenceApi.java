@@ -109,14 +109,30 @@ public class ConferenceApi {
         String userId = user.getUserId();
         String mainEmail = user.getEmail();
 
-        if (null == displayName) {
-            displayName = extractDefaultDisplayNameFromEmail(mainEmail);
+        // Get the Profile from the datastore if it exists
+        // otherwise create a new one
+        Profile profile = ofy().load().key(Key.create(Profile.class, userId)).now();
+
+        if (null == profile) {
+            // Populate the displayName and teeShirtSize with default values
+            // if not sent in request
+            if (null == displayName) {
+                displayName = extractDefaultDisplayNameFromEmail(mainEmail);
+            }
+
+            if (null == teeShirtSize) {
+                teeShirtSize = TeeShirtSize.NOT_SPECIFIED;
+            }
+
+            // Now create a new Profile entity
+            profile = new Profile(userId, displayName, mainEmail, teeShirtSize);
+        } else {
+            // The Profile entity already exists
+            // Update the Profile entity
+            profile.update(displayName, teeShirtSize);
         }
 
-        // Create a new Profile entity from the
-        // userId, displayName, mainEmail and teeShirtSize
-        Profile profile = new Profile(userId, displayName, mainEmail, teeShirtSize);
-
+        // Save the entity in the database
         ofy().save().entity(profile).now();
 
         // Return the profile
