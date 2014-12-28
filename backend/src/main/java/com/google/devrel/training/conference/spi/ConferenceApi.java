@@ -23,6 +23,7 @@ import com.google.api.server.spi.response.UnauthorizedException;
 import com.google.appengine.api.users.User;
 import com.google.devrel.training.conference.Constants;
 import com.google.devrel.training.conference.domain.Profile;
+import com.google.devrel.training.conference.form.ProfileForm;
 import com.google.devrel.training.conference.form.ProfileForm.TeeShirtSize;
 import com.googlecode.objectify.Key;
 
@@ -92,21 +93,17 @@ public class ConferenceApi {
      * @throws UnauthorizedException when the User object is null.
      */
     @ApiMethod(name = "saveProfile", path = "profile", httpMethod = HttpMethod.POST)
-    // TODO 1 Pass the ProfileForm parameter
     // TODO 2 Pass the User parameter
-    public Profile saveProfile() throws UnauthorizedException {
+    public Profile saveProfile(final ProfileForm profileForm) throws UnauthorizedException {
         // TODO 2
         // If the user is not logged in, throw an UnauthorizedException
 
-        // TODO 1
-        // Set the teeShirtSize to the value sent by the ProfileForm, if sent
-        // otherwise leave it as the default value
         TeeShirtSize teeShirtSize = TeeShirtSize.NOT_SPECIFIED;
+        if (profileForm.getTeeShirtSize() != null) {
+            teeShirtSize = profileForm.getTeeShirtSize();
+        }
 
-        // TODO 1
-        // Set the displayName to the value sent by the ProfileForm, if sent
-        // otherwise set it to null
-        String displayName = "Your name will go here";
+        String displayName = profileForm.getDisplayName();
 
         // TODO 2
         // Get the userId and mainEmail
