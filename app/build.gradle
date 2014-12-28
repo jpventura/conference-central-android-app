@@ -76,6 +76,6 @@ dependencies {
         exclude(group: 'org.apache.httpcomponents', module: 'httpclient')
     }
 
-    // This is used by the Google HTTP client library.
-    compile(group: 'com.google.guava', name: 'guava', version: '14.0.+')
+    // Add the Google Endpoints client library
+    compile project(path: ':backend', configuration: 'android-endpoints')
 }
