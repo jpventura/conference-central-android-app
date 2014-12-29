@@ -195,9 +195,7 @@ public class ConferenceApi {
             httpMethod = HttpMethod.POST
     )
     public List<Conference> queryConferences(ConferenceQueryForm conferenceQueryForm) {
-        Query<Conference> query = ofy().load().type(Conference.class).order("name");
-
-        return query.list();
+        return conferenceQueryForm.getQuery().list();
     }
 
     public List<Conference> filterPlayground() {
