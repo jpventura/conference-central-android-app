@@ -21,13 +21,19 @@ import com.google.api.server.spi.config.Api;
 import com.google.api.server.spi.config.ApiMethod;
 import com.google.api.server.spi.config.ApiMethod.HttpMethod;
 import com.google.api.server.spi.config.ApiNamespace;
+import com.google.api.server.spi.response.NotFoundException;
 import com.google.api.server.spi.response.UnauthorizedException;
 import com.google.appengine.api.users.User;
 import com.google.devrel.training.conference.Constants;
+import com.google.devrel.training.conference.domain.Conference;
 import com.google.devrel.training.conference.domain.Profile;
+import com.google.devrel.training.conference.form.ConferenceForm;
 import com.google.devrel.training.conference.form.ProfileForm;
 import com.google.devrel.training.conference.form.ProfileForm.TeeShirtSize;
 import com.googlecode.objectify.Key;
+
+import java.util.Collection;
+import java.util.List;
 
 /**
  * Defines conference APIs.
@@ -137,5 +143,81 @@ public class ConferenceApi {
 
         // Return the profile
         return profile;
+    }
+
+    /**
+     * Creates a new Conference object and stores it to the datastore.
+     *
+     * @param user A user who invokes this method, null when the user is not signed in.
+     * @param conferenceForm A ConferenceForm object representing user's inputs.
+     * @return A newly created Conference Object.
+     * @throws UnauthorizedException when the user is not signed in.
+     */
+    @ApiMethod(name = "createConference", path = "conference", httpMethod = HttpMethod.POST)
+    public Conference createConference(final User user, final ConferenceForm conferenceForm)
+            throws UnauthorizedException {
+        if (null == user) {
+            throw new UnauthorizedException("Authorization required");
+        }
+
+        // TODO (Lesson 4)
+        // Get the userId of the logged in User
+
+        // TODO (Lesson 4)
+        // Get the key for the User's Profile
+
+        // TODO (Lesson 4)
+        // Allocate a key for the conference -- let App Engine allocate the ID
+        // Don't forget to include the parent Profile in the allocated ID
+
+        // TODO (Lesson 4)
+        // Get the Conference Id from the Key
+
+        // TODO (Lesson 4)
+        // Get the existing Profile entity for the current user if there is one
+        // Otherwise create a new Profile entity with default values
+
+        // TODO (Lesson 4)
+        // Create a new Conference Entity, specifying the user's Profile entity
+        // as the parent of the conference
+
+        // TODO (Lesson 4)
+        // Save Conference and Profile Entities
+
+        return null;
+    }
+
+    /**
+     * Returns a collection of Conference Object that the user is going to attend.
+     *
+     * @param user An user who invokes this method, null when the user is not signed in.
+     * @return a Collection of Conferences that the user is going to attend.
+     * @throws UnauthorizedException when the User object is null.
+     */
+    @ApiMethod(
+            name = "getConferencesToAttend",
+            path = "getConferencesToAttend",
+            httpMethod = HttpMethod.GET
+    )
+    public Collection<Conference> getConferencesToAttend(final User user)
+            throws UnauthorizedException, NotFoundException {
+        // If not signed in, throw a 401 error.
+        if (user == null) {
+            throw new UnauthorizedException("Authorization required");
+        }
+
+        // TODO
+        // Get the Profile entity for the user
+        Profile profile = null;
+
+        // TODO
+        // Get the value of the Profile's conferenceKeysToAttend property
+        List<String> keyStringsToAttend = null;
+
+        // TODO
+        // Iterate over keyStringsToAttend
+        // and return a Collection of the
+        // Conference entities that the user has registered to attend
+        return null;
     }
 }
