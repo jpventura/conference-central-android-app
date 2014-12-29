@@ -211,8 +211,11 @@ public class ConferenceApi {
 
     public List<Conference> filterPlayground() {
         Query<Conference> query = ofy().load().type(Conference.class).order("name");
-        query = query.filter("city =", "London");
-        query = query.filter("topics =", "Medical Innovations");
+
+        query = query.filter("city =", "London")
+                .filter("topics =", "Medical Innovations")
+                .filter("month =", 6)
+                .filter("maxAttendees =", 10).order("maxAttendees").order("name");
 
         return query.list();
     }
