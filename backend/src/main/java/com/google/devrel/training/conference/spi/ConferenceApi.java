@@ -29,9 +29,11 @@ import com.google.devrel.training.conference.Constants;
 import com.google.devrel.training.conference.domain.Conference;
 import com.google.devrel.training.conference.domain.Profile;
 import com.google.devrel.training.conference.form.ConferenceForm;
+import com.google.devrel.training.conference.form.ConferenceQueryForm;
 import com.google.devrel.training.conference.form.ProfileForm;
 import com.google.devrel.training.conference.form.ProfileForm.TeeShirtSize;
 import com.googlecode.objectify.Key;
+import com.googlecode.objectify.cmd.Query;
 
 import java.util.Collection;
 import java.util.List;
@@ -176,6 +178,26 @@ public class ConferenceApi {
         ofy().save().entities(conference, profile).now();
 
         return conference;
+    }
+
+    /**
+     * Queries against the datastore with the given filters and returns the result.
+     *
+     * Normally this kind of method is supposed to get invoked by a GET HTTP method,
+     * but we do it with POST, in order to receive conferenceQueryForm Object via the POST body.
+     *
+     * @param conferenceQueryForm A form object representing the query.
+     * @return A List of Conferences that match the query.
+     */
+    @ApiMethod(
+            name = "queryConferences",
+            path = "queryConferences",
+            httpMethod = HttpMethod.POST
+    )
+    public List<Conference> queryConferences(ConferenceQueryForm conferenceQueryForm) {
+        Query<Conference> query = ofy().load().type(Conference.class).order("name");
+
+        return query.list();
     }
 
     /**
