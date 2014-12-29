@@ -200,6 +200,14 @@ public class ConferenceApi {
         return query.list();
     }
 
+    public List<Conference> filterPlayground() {
+        Query<Conference> query = ofy().load().type(Conference.class).order("name");
+        query = query.filter("city =", "London");
+        query = query.filter("topics =", "Medical Innovations");
+
+        return query.list();
+    }
+
     /**
      * Returns a list of Conferences that the user created.
      * In order to receive the websafeConferenceKey via the JSON params, uses a POST method.
