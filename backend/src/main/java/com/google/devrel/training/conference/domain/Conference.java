@@ -39,6 +39,7 @@ import java.util.List;
 @Entity
 public class Conference {
 
+    @Index(IfNotDefault.class)
     private static final String DEFAULT_CITY = "Default City";
 
     private static final List<String> DEFAULT_TOPICS = ImmutableList.of("Default", "Topic");
