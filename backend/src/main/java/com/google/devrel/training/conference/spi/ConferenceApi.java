@@ -201,6 +201,30 @@ public class ConferenceApi {
     }
 
     /**
+     * Returns a list of Conferences that the user created.
+     * In order to receive the websafeConferenceKey via the JSON params, uses a POST method.
+     *
+     * @param user A user who invokes this method, null when the user is not signed in.
+     * @return a list of Conferences that the user created.
+     * @throws UnauthorizedException when the user is not signed in.
+     */
+    @ApiMethod(
+            name = "getConferencesCreated",
+            path = "getConferencesCreated",
+            httpMethod = HttpMethod.POST
+    )
+    public List<Conference> getConferencesCreated(final User user) throws UnauthorizedException {
+        // If not signed in, throw a 401 error.
+        if (null == user) {
+            throw new UnauthorizedException("Authorization required");
+        }
+
+        Key<Profile> userKey = Key.create(Profile.class, user.getUserId());
+
+        return ofy().load().type(Conference.class).ancestor(userKey).order("name").list();
+    }
+
+    /**
      * Returns a collection of Conference Object that the user is going to attend.
      *
      * @param user An user who invokes this method, null when the user is not signed in.
