@@ -22,6 +22,9 @@ import com.google.api.server.spi.config.Api;
 import com.google.api.server.spi.config.ApiMethod;
 import com.google.api.server.spi.config.ApiMethod.HttpMethod;
 import com.google.api.server.spi.config.ApiNamespace;
+import com.google.api.server.spi.config.Named;
+import com.google.api.server.spi.response.ConflictException;
+import com.google.api.server.spi.response.ForbiddenException;
 import com.google.api.server.spi.response.NotFoundException;
 import com.google.api.server.spi.response.UnauthorizedException;
 import com.google.appengine.api.users.User;
@@ -33,6 +36,7 @@ import com.google.devrel.training.conference.form.ConferenceQueryForm;
 import com.google.devrel.training.conference.form.ProfileForm;
 import com.google.devrel.training.conference.form.ProfileForm.TeeShirtSize;
 import com.googlecode.objectify.Key;
+import com.googlecode.objectify.Work;
 import com.googlecode.objectify.cmd.Query;
 
 import java.util.ArrayList;
@@ -71,6 +75,114 @@ public class ConferenceApi {
      */
     private static String extractDefaultDisplayNameFromEmail(String email) {
         return email == null ? null : email.substring(0, email.indexOf("@"));
+    }
+
+    /**
+     * Gets the Profile entity for the current user
+     * or creates it if it doesn't exist
+     * @param user
+     * @return user's Profile
+     */
+    private static Profile getProfileFromUser(User user) {
+        // First fetch the user's Profile from the datastore.
+        Profile profile = ofy().load().key(
+                Key.create(Profile.class, user.getUserId())).now();
+        if (profile == null) {
+            // Create a new Profile if it doesn't exist.
+            // Use default displayName and teeShirtSize
+            String email = user.getEmail();
+            profile = new Profile(user.getUserId(),
+                    extractDefaultDisplayNameFromEmail(email), email, TeeShirtSize.NOT_SPECIFIED);
+        }
+        return profile;
+    }
+
+    /**
+     * Just a wrapper for Boolean.
+     * We need this wrapped Boolean because endpoints functions must return
+     * an object instance, they can't return a Type class such as
+     * String or Integer or Boolean
+     */
+    public static class WrappedBoolean {
+
+        private final Boolean result;
+        private final String reason;
+
+        public WrappedBoolean(Boolean result) {
+            this.result = result;
+            this.reason = "";
+        }
+
+        public WrappedBoolean(Boolean result, String reason) {
+            this.result = result;
+            this.reason = reason;
+        }
+
+        public Boolean getResult() {
+            return result;
+        }
+
+        public String getReason() {
+            return reason;
+        }
+    }
+
+    /**
+     * A wrapper class that can embrace a generic result or some kind of exception.
+     *
+     * Use this wrapper class for the return type of objectify transaction.
+     * <pre>
+     * {@code
+     * // The transaction that returns Conference object.
+     * TxResult<Conference> result = ofy().transact(new Work<TxResult<Conference>>() {
+     *     public TxResult<Conference> run() {
+     *         // Code here.
+     *         // To throw 404
+     *         return new TxResult<>(new NotFoundException("No such conference"));
+     *         // To return a conference.
+     *         Conference conference = somehow.getConference();
+     *         return new TxResult<>(conference);
+     *     }
+     * }
+     * // Actually the NotFoundException will be thrown here.
+     * return result.getResult();
+     * </pre>
+     *
+     * @param <ResultType> The type of the actual return object.
+     */
+    private static class TxResult<ResultType> {
+        private ResultType result;
+
+        private Throwable exception;
+
+        private TxResult(ResultType result) {
+            this.result = result;
+        }
+
+        private TxResult(Throwable exception) {
+            if (exception instanceof ConflictException) {
+                this.exception = exception;
+            } else if (exception instanceof ForbiddenException) {
+                this.exception = exception;
+            } else if (exception instanceof NotFoundException) {
+                this.exception = exception;
+            } else {
+                throw new IllegalArgumentException("Exception not supported.");
+            }
+        }
+
+        private ResultType getResult()
+                throws ConflictException, ForbiddenException, NotFoundException {
+            if (exception instanceof ConflictException) {
+                throw (ConflictException) exception;
+            } else if (exception instanceof ForbiddenException) {
+                throw (ForbiddenException) exception;
+            } else if (exception instanceof NotFoundException) {
+                throw (NotFoundException) exception;
+            } else {
+                return result;
+            }
+        }
     }
 
     /**
@@ -191,6 +303,95 @@ public class ConferenceApi {
     }
 
     /**
+     * Updates the existing Conference with the given conferenceId.
+     *
+     * @param user A user who invokes this method, null when the user is not signed in.
+     * @param conferenceForm A ConferenceForm object representing user's inputs.
+     * @param websafeConferenceKey The String representation of the Conference key.
+     * @return Updated Conference object.
+     * @throws UnauthorizedException when the user is not signed in.
+     * @throws NotFoundException when there is no Conference with the given conferenceId.
+     * @throws ForbiddenException when the user is not the owner of the Conference.
+     */
+    @ApiMethod(
+            name = "updateConference",
+            path = "conference/{websafeConferenceKey}",
+            httpMethod = HttpMethod.PUT
+    )
+    public Conference updateConference(final User user, final ConferenceForm conferenceForm,
+            @Named("websafeConferenceKey") final String websafeConferenceKey)
+            throws UnauthorizedException, NotFoundException, ForbiddenException, ConflictException {
+        if (user == null) {
+            throw new UnauthorizedException("Authorization required");
+        }
+
+        // TODO
+        // Get the user ID.
+        final String userId = null;
+
+        TxResult<Conference> result = ofy().transact(new Work<TxResult<Conference>>() {
+            @Override
+            public TxResult<Conference> run() {
+                // TODO
+                // Get the conference key -- you can get it from websafeConferenceKey
+                // Will throw ForbiddenException if the key cannot be created
+                Key<Conference> conferenceKey = null;
+
+                // TODO
+                // Get the Conference entity from the datastore
+                Conference conference = null;
+
+                // TODO
+                // Get the user's Profile entity
+                Profile profile = null;
+
+                // TODO
+                // Check if user is the conference owner.
+
+                // TODO
+                // Update the conference with the conferenceForm sent from the client.
+                return null;
+            }
+        });
+
+        return result.getResult();
+    }
+
+    /**
+     * Returns a collection of Conference Object that the user is going to attend.
+     *
+     * @param user An user who invokes this method, null when the user is not signed in.
+     * @return a Collection of Conferences that the user is going to attend.
+     * @throws UnauthorizedException when the User object is null.
+     */
+    @ApiMethod(
+            name = "getConferencesToAttend",
+            path = "getConferencesToAttend",
+            httpMethod = HttpMethod.GET
+    )
+    public Collection<Conference> getConferencesToAttend(final User user)
+            throws UnauthorizedException, NotFoundException {
+        // If not signed in, throw a 401 error.
+        if (user == null) {
+            throw new UnauthorizedException("Authorization required");
+        }
+
+        // TODO
+        // Get the Profile entity for the user
+        Profile profile = null;
+
+        // TODO
+        // Get the value of the Profile's conferenceKeysToAttend property
+        List<String> keyStringsToAttend = null;
+
+        // TODO
+        // Iterate over keyStringsToAttend
+        // and return a Collection of the
+        // Conference entities that the user has registered to attend
+        return null;
+    }
+
+    /**
      * Queries against the datastore with the given filters and returns the result.
      *
      * Normally this kind of method is supposed to get invoked by a GET HTTP method,
@@ -244,36 +445,95 @@ public class ConferenceApi {
     }
 
     /**
-     * Returns a collection of Conference Object that the user is going to attend.
+     * Register to attend the specified Conference.
      *
      * @param user An user who invokes this method, null when the user is not signed in.
-     * @return a Collection of Conferences that the user is going to attend.
-     * @throws UnauthorizedException when the User object is null.
+     * @param websafeConferenceKey The String representation of the Conference Key.
+     * @return Boolean true when success, otherwise false
+     * @throws UnauthorizedException when the user is not signed in.
+     * @throws NotFoundException when there is no Conference with the given conferenceId.
      */
     @ApiMethod(
-            name = "getConferencesToAttend",
-            path = "getConferencesToAttend",
-            httpMethod = HttpMethod.GET
+            name = "registerForConference",
+            path = "conference/{websafeConferenceKey}/registration",
+            httpMethod = HttpMethod.POST
     )
-    public Collection<Conference> getConferencesToAttend(final User user)
-            throws UnauthorizedException, NotFoundException {
-        // If not signed in, throw a 401 error.
-        if (user == null) {
+    public WrappedBoolean registerForConference(final User user,
+            @Named("websafeConferenceKey") final String websafeConferenceKey)
+            throws ConflictException, ForbiddenException, NotFoundException, UnauthorizedException {
+        if (null == user) {
             throw new UnauthorizedException("Authorization required");
         }
 
-        // TODO
-        // Get the Profile entity for the user
-        Profile profile = null;
+        // Get the userId
+        final String userId = user.getUserId();
 
-        // TODO
-        // Get the value of the Profile's conferenceKeysToAttend property
-        List<String> keyStringsToAttend = null;
+        TxResult<Boolean> result = ofy().transact(new Work<TxResult<Boolean>>() {
+            @Override
+            public TxResult<Boolean> run() {
+                // TODO
+                // Get the conference key -- you can get it from websafeConferenceKey
+                // Will throw ForbiddenException if the key cannot be created
+                Key<Conference> conferenceKey = null;
 
-        // TODO
-        // Iterate over keyStringsToAttend
-        // and return a Collection of the
-        // Conference entities that the user has registered to attend
+                // TODO
+                // Get the Conference entity from the datastore
+                Conference conference = null;
+
+                // TODO
+                // Get the user's Profile entity
+                Profile profile = null;
+
+                if (null == conference) {
+                    String message = "No Conference found with key: " + websafeConferenceKey;
+                    return new TxResult<>(new NotFoundException(message));
+                } else if (profile.getConferenceKeysToAttend().contains(websafeConferenceKey)) {
+                    String message = "You have already registered for this conference";
+                    return new TxResult<>(new ConflictException(message));
+                } else if (conference.getSeatsAvailable() <= 0) {
+                    String message = "There are no seats available.";
+                    return new TxResult<>(new ConflictException(message));
+                } else {
+                    // All looks good, go ahead and book the seat
+
+                    // TODO
+                    // Add the websafeConferenceKey to the profile's
+                    // conferencesToAttend property
+
+                    // TODO
+                    // Decrease the conference's seatsAvailable
+                    // You can use the bookSeats() method on Conference
+
+                    // TODO
+                    // Save the Conference and Profile entities
+
+                    // We are booked!
+                    return new TxResult<>(true);
+                }
+            }
+        });
+
+        return new WrappedBoolean(result.getResult());
+    }
+
+    /**
+     * Unregister from the specified Conference.
+     *
+     * @param user An user who invokes this method, null when the user is not signed in.
+     * @param websafeConferenceKey The String representation of the Conference Key
+     * to unregister from.
+     * @return Boolean true when success, otherwise false.
+     * @throws UnauthorizedException when the user is not signed in.
+     * @throws NotFoundException when there is no Conference with the given conferenceId.
+     */
+    @ApiMethod(
+            name = "unregisterFromConference",
+            path = "conference/{websafeConferenceKey}/registration",
+            httpMethod = HttpMethod.DELETE
+    )
+    public WrappedBoolean unregisterFromConference(final User user,
+            @Named("websafeConferenceKey") final String websafeConferenceKey)
+            throws UnauthorizedException, NotFoundException, ForbiddenException, ConflictException {
         return null;
     }
 }
