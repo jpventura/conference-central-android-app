@@ -358,6 +358,29 @@ public class ConferenceApi {
     }
 
     /**
+     * Returns a Conference object with the given conferenceId.
+     *
+     * @param websafeConferenceKey The String representation of the Conference Key.
+     * @return a Conference object with the given conferenceId.
+     * @throws NotFoundException when there is no Conference with the given conferenceId.
+     */
+    @ApiMethod(
+            name = "getConference",
+            path = "conference/{websafeConferenceKey}",
+            httpMethod = HttpMethod.GET
+    )
+    public Conference getConference(
+            @Named("websafeConferenceKey") final String websafeConferenceKey)
+            throws NotFoundException {
+        Key<Conference> conferenceKey = Key.create(websafeConferenceKey);
+        Conference conference = ofy().load().key(conferenceKey).now();
+        if (null == conference) {
+            throw new NotFoundException("No Conference found with key: " + websafeConferenceKey);
+        }
+        return conference;
+    }
+
+    /**
      * Returns a collection of Conference Object that the user is going to attend.
      *
      * @param user An user who invokes this method, null when the user is not signed in.
@@ -376,19 +399,18 @@ public class ConferenceApi {
             throw new UnauthorizedException("Authorization required");
         }
 
-        // TODO
-        // Get the Profile entity for the user
-        Profile profile = null;
+        Profile profile = ofy().load().key(Key.create(Profile.class, user.getUserId())).now();
+        if (profile == null) {
+            throw new NotFoundException("Profile doesn't exist.");
+        }
 
-        // TODO
-        // Get the value of the Profile's conferenceKeysToAttend property
-        List<String> keyStringsToAttend = null;
+        List<String> keyStringsToAttend = profile.getConferenceKeysToAttend();
 
-        // TODO
-        // Iterate over keyStringsToAttend
-        // and return a Collection of the
-        // Conference entities that the user has registered to attend
-        return null;
+        List<Key<Conference>> keysToAttend = new ArrayList<>();
+        for (String keyString : keyStringsToAttend) {
+            keysToAttend.add(Key.<Conference>create(keyString));
+        }
+        return ofy().load().keys(keysToAttend).values();
     }
 
     /**
