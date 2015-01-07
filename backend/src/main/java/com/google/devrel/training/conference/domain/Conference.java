@@ -16,6 +16,8 @@
 package com.google.devrel.training.conference.domain;
 
 import static com.google.devrel.training.conference.service.OfyService.ofy;
+
+import com.googlecode.objectify.annotation.Cache;
 import com.googlecode.objectify.condition.IfNotDefault;
 
 import com.google.api.server.spi.config.AnnotationBoolean;
@@ -37,6 +39,7 @@ import java.util.List;
  * Conference class stores conference information.
  */
 @Entity
+@Cache
 public class Conference {
 
     @Index(IfNotDefault.class)
