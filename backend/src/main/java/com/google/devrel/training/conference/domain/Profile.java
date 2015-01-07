@@ -17,6 +17,7 @@ package com.google.devrel.training.conference.domain;
 
 import com.google.common.collect.ImmutableList;
 import com.google.devrel.training.conference.form.ProfileForm.TeeShirtSize;
+import com.googlecode.objectify.annotation.Cache;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
 
@@ -27,6 +28,7 @@ import java.util.List;
  * Profile class stores user's profile data.
  */
 @Entity
+@Cache
 public class Profile {
     /**
      *  Use userId as the datastore key.
