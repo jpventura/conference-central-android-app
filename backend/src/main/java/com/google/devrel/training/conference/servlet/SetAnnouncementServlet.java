@@ -43,13 +43,11 @@ public class SetAnnouncementServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        // TODO
         // Query for conferences with less than 5 seats left
-        Iterable<Conference> iterable = null;
+        Iterable<Conference> iterable = ofy().load().type(Conference.class)
+                .filter("seatsAvailable <", 5)
+                .filter("seatsAvailable >", 0);
 
-        // TODO
-        // Iterate over the conferences with less than 5 seats less
-        // and get the name of each one
         List<String> conferenceNames = new ArrayList<>(0);
         for (Conference conference : iterable) {
             conferenceNames.add(conference.getName());
@@ -63,14 +61,12 @@ public class SetAnnouncementServlet extends HttpServlet {
             Joiner joiner = Joiner.on(", ").skipNulls();
             announcementStringBuilder.append(joiner.join(conferenceNames));
 
-            // TODO
-            // Get the Memcache Service
+            MemcacheService memcacheService = MemcacheServiceFactory.getMemcacheService();
 
+            String announcementKey = Constants.MEMCACHE_ANNOUNCEMENTS_KEY;
+            String announcementText = announcementStringBuilder.toString();
 
-            // TODO
-            // Put the announcement String in memcache,
-            // keyed by Constants.MEMCACHE_ANNOUNCEMENTS_KEY
-
+            memcacheService.put(announcementKey, announcementText);
         }
 
         // Set the response status to 204 which means
