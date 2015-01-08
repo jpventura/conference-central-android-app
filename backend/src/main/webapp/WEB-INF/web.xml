@@ -16,6 +16,14 @@
       <servlet-name>SetAnnouncementServlet</servlet-name>
       <url-pattern>/crons/set_announcement</url-pattern>
     </servlet-mapping>
+    <servlet>
+      <servlet-name>SendConfirmationEmailServlet</servlet-name>
+      <servlet-class>com.google.devrel.training.conference.servlet.SendConfirmationEmailServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+      <servlet-name>SendConfirmationEmailServlet</servlet-name>
+      <url-pattern>/crons/send_confirmation_email</url-pattern>
+    </servlet-mapping>
     <servlet-mapping>
         <servlet-name>SystemServiceServlet</servlet-name>
         <url-pattern>/_ah/spi/*</url-pattern>
@@ -40,5 +48,14 @@
       <auth-constraint>
         <role-name>admin</role-name>
       </auth-constraint>
+    </security-constraint>
+    <security-constraint>
+        <web-resource-collection>
+            <web-resource-name>tasks</web-resource-name>
+            <url-pattern>/tasks/*</url-pattern>
+        </web-resource-collection>
+        <auth-constraint>
+            <role-name>admin</role-name>
+        </auth-constraint>
     </security-constraint>
 </web-app>
