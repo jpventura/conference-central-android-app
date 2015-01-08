@@ -29,6 +29,9 @@ import com.google.api.server.spi.response.NotFoundException;
 import com.google.api.server.spi.response.UnauthorizedException;
 import com.google.appengine.api.memcache.MemcacheService;
 import com.google.appengine.api.memcache.MemcacheServiceFactory;
+import com.google.appengine.api.taskqueue.Queue;
+import com.google.appengine.api.taskqueue.QueueFactory;
+import com.google.appengine.api.taskqueue.TaskOptions;
 import com.google.appengine.api.users.User;
 import com.google.devrel.training.conference.Constants;
 import com.google.devrel.training.conference.domain.Announcement;
@@ -279,7 +282,7 @@ public class ConferenceApi {
             throw new UnauthorizedException("Authorization required");
         }
 
-        String userId = user.getUserId();
+        final String userId = user.getUserId();
 
         Key<Profile> profileKey = Key.create(Profile.class, userId);
 
@@ -287,11 +290,24 @@ public class ConferenceApi {
 
         final long conferenceId = conferenceKey.getId();
 
-        final Profile profile = getProfileFromUser(user);
+        final Queue queue = QueueFactory.getQueue("default");
 
-        Conference conference = new Conference(conferenceId, userId, conferenceForm);
-
-        ofy().save().entities(conference, profile).now();
+        // Start a transaction
+        Conference conference = ofy().transact(new Work<Conference>() {
+            @Override
+            public Conference run() {
+                // Fetch user's profile.
+                Profile profile = getProfileFromUser(user);
+                Conference conference = new Conference(conferenceId, userId, conferenceForm);
+                // Save Conference and Profile.
+                ofy().save().entities(conference, profile).now();
+                queue.add(ofy().getTransaction(),
+                        TaskOptions.Builder.withUrl("/tasks/send_confirmation_email")
+                        .param("email", profile.getMainEmail())
+                        .param("conferenceInfo", conference.toString()));
+                return conference;
+            }
+        });
 
         return conference;
     }
