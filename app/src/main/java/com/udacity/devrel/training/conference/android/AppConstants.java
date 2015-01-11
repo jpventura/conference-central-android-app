@@ -22,7 +22,7 @@ import android.app.Dialog;
 import android.content.Context;
 
 // Replace the next import with your library (it will have your appspot project ID)
-import com.appspot.your_app_id.conference.Conference;
+import com.appspot.noqodo.conference.Conference;
 
 import com.google.android.gms.auth.GoogleAuthUtil;
 import com.google.android.gms.common.GooglePlayServicesUtil;
@@ -46,7 +46,7 @@ public class AppConstants {
      *
      * @see <a href="https://developers.google.com/console">https://developers.google.com/console</a>
      */
-    public static final String WEB_CLIENT_ID = "Replace with Your WEB CLIENT ID";
+    public static final String WEB_CLIENT_ID = "532047971966-1fot6c0tgkcrem1hpnjpa4k8ip70omc1.apps.googleusercontent.com";
     /**
      * The audience is defined by the web client id, not the Android client id.
      */
