@@ -35,6 +35,7 @@ import com.google.appengine.api.taskqueue.TaskOptions;
 import com.google.appengine.api.users.User;
 import com.google.devrel.training.conference.Constants;
 import com.google.devrel.training.conference.domain.Announcement;
+import com.google.devrel.training.conference.domain.AppEngineUser;
 import com.google.devrel.training.conference.domain.Conference;
 import com.google.devrel.training.conference.domain.Profile;
 import com.google.devrel.training.conference.form.ConferenceForm;
@@ -42,6 +43,7 @@ import com.google.devrel.training.conference.form.ConferenceQueryForm;
 import com.google.devrel.training.conference.form.ProfileForm;
 import com.google.devrel.training.conference.form.ProfileForm.TeeShirtSize;
 import com.googlecode.objectify.Key;
+import com.googlecode.objectify.Objectify;
 import com.googlecode.objectify.Work;
 import com.googlecode.objectify.cmd.Query;
 
@@ -83,24 +85,34 @@ public class ConferenceApi {
         return email == null ? null : email.substring(0, email.indexOf("@"));
     }
 
-    /**
-     * Gets the Profile entity for the current user
-     * or creates it if it doesn't exist
-     * @param user
-     * @return user's Profile
-     */
-    private static Profile getProfileFromUser(User user) {
-        // First fetch the user's Profile from the datastore.
+    private static Profile getProfileFromUser(User user, String userId) {
+        // First fetch it from the datastore.
         Profile profile = ofy().load().key(
-                Key.create(Profile.class, user.getUserId())).now();
+                Key.create(Profile.class, userId)).now();
         if (profile == null) {
-            // Create a new Profile if it doesn't exist.
-            // Use default displayName and teeShirtSize
+            // Create a new Profile if not exist.
             String email = user.getEmail();
-            profile = new Profile(user.getUserId(),
+            profile = new Profile(userId,
                     extractDefaultDisplayNameFromEmail(email), email, TeeShirtSize.NOT_SPECIFIED);
         }
         return profile;
+    }
+
+    /**
+     * @param user A User object injected by the cloud endpoints.
+     * @return the App Engine userId for the user.
+     */
+    private static String getUserId(User user) {
+        String userId = user.getUserId();
+        if (null == userId) {
+            AppEngineUser appEngineUser = new AppEngineUser(user);
+            ofy().save().entity(appEngineUser).now();
+            // Begin new session for not using session cache.
+            Objectify objectify = ofy().factory().begin();
+            AppEngineUser savedUser = objectify.load().key(appEngineUser.getKey()).now();
+            userId = savedUser.getUser().getUserId();
+        }
+        return userId;
     }
 
     /**
@@ -247,7 +259,7 @@ public class ConferenceApi {
         String displayName = profileForm.getDisplayName();
 
         // Get the userId and mainEmail
-        String userId = user.getUserId();
+        String userId = getUserId(user);
         String mainEmail = user.getEmail();
 
         // Get the Profile from the datastore if it exists
@@ -262,7 +274,7 @@ public class ConferenceApi {
 
             // Create a new Profile entity from the
             // userId, displayName, mainEmail and teeShirtSize
-            profile = new Profile(userId, displayName, mainEmail, teeShirtSize);
+            profile = new Profile(getUserId(user), displayName, mainEmail, teeShirtSize);
         } else {
             // The Profile entity already exists
             // Update the Profile entity
@@ -291,7 +303,7 @@ public class ConferenceApi {
             throw new UnauthorizedException("Authorization required");
         }
 
-        final String userId = user.getUserId();
+        final String userId = getUserId(user);
 
         Key<Profile> profileKey = Key.create(Profile.class, userId);
 
@@ -306,7 +318,7 @@ public class ConferenceApi {
             @Override
             public Conference run() {
                 // Fetch user's profile.
-                Profile profile = getProfileFromUser(user);
+                Profile profile = getProfileFromUser(user, userId);
                 Conference conference = new Conference(conferenceId, userId, conferenceForm);
                 // Save Conference and Profile.
                 ofy().save().entities(conference, profile).now();
@@ -505,7 +517,7 @@ public class ConferenceApi {
             throw new UnauthorizedException("Authorization required");
         }
 
-        Key<Profile> userKey = Key.create(Profile.class, user.getUserId());
+        Key<Profile> userKey = Key.create(Profile.class, getUserId(user));
 
         return ofy().load().type(Conference.class).ancestor(userKey).order("name").list();
     }
@@ -541,7 +553,7 @@ public class ConferenceApi {
 
                 Conference conference = ofy().load().key(conferenceKey).now();
 
-                Profile profile = ofy().load().key(Key.create(Profile.class, userId)).now();
+                Profile profile = getProfileFromUser(user, userId);
 
                 if (null == conference) {
                     String message = "No Conference found with key: " + websafeConferenceKey;
@@ -593,6 +605,7 @@ public class ConferenceApi {
             throw new UnauthorizedException("Authorization required");
         }
 
+        final String userId = getUserId(user);
         WrappedBoolean result = ofy().transact(new Work<WrappedBoolean>() {
             @Override
             public WrappedBoolean run() {
@@ -605,7 +618,7 @@ public class ConferenceApi {
                 }
 
                 // Un-registering from the Conference.
-                Profile profile = getProfileFromUser(user);
+                Profile profile = getProfileFromUser(user, userId);
                 if (profile.getConferenceKeysToAttend().contains(websafeConferenceKey)) {
                     profile.unregisterFromConference(websafeConferenceKey);
                     conference.giveBackSeats(1);
