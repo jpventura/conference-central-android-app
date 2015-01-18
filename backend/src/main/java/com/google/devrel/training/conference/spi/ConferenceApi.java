@@ -484,18 +484,11 @@ public class ConferenceApi {
         TxResult<Boolean> result = ofy().transact(new Work<TxResult<Boolean>>() {
             @Override
             public TxResult<Boolean> run() {
-                // TODO
-                // Get the conference key -- you can get it from websafeConferenceKey
-                // Will throw ForbiddenException if the key cannot be created
-                Key<Conference> conferenceKey = null;
+                Key<Conference> conferenceKey = Key.create(websafeConferenceKey);
 
-                // TODO
-                // Get the Conference entity from the datastore
-                Conference conference = null;
+                Conference conference = ofy().load().key(conferenceKey).now();
 
-                // TODO
-                // Get the user's Profile entity
-                Profile profile = null;
+                Profile profile = ofy().load().key(Key.create(Profile.class, userId)).now();
 
                 if (null == conference) {
                     String message = "No Conference found with key: " + websafeConferenceKey;
@@ -509,16 +502,11 @@ public class ConferenceApi {
                 } else {
                     // All looks good, go ahead and book the seat
 
-                    // TODO
-                    // Add the websafeConferenceKey to the profile's
-                    // conferencesToAttend property
+                    profile.addToConferenceKeysToAttend(websafeConferenceKey);
 
-                    // TODO
-                    // Decrease the conference's seatsAvailable
-                    // You can use the bookSeats() method on Conference
+                    conference.bookSeats(1);
 
-                    // TODO
-                    // Save the Conference and Profile entities
+                    ofy().save().entities(profile, conference).now();
 
                     // We are booked!
                     return new TxResult<>(true);
