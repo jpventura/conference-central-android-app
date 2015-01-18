@@ -35,6 +35,7 @@ import com.google.devrel.training.conference.form.ProfileForm.TeeShirtSize;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.cmd.Query;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -196,17 +197,6 @@ public class ConferenceApi {
     )
     public List<Conference> queryConferences(ConferenceQueryForm conferenceQueryForm) {
         return conferenceQueryForm.getQuery().list();
-    }
-
-    public List<Conference> filterPlayground() {
-        Query<Conference> query = ofy().load().type(Conference.class).order("name");
-
-        query = query.filter("city =", "London")
-                .filter("topics =", "Medical Innovations")
-                .filter("month =", 6)
-                .filter("maxAttendees =", 10).order("maxAttendees").order("name");
-
-        return query.list();
     }
 
     /**
