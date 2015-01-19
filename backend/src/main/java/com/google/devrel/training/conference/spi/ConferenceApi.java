@@ -216,11 +216,7 @@ public class ConferenceApi {
         if (user == null) {
             throw new UnauthorizedException("Authorization required");
         }
-
-        String userId = user.getUserId();
-        Key key = Key.create(Profile.class, userId);
-        Profile profile = (Profile) ofy().load().key(key).now();
-        return profile;
+        return ofy().load().key(Key.create(Profile.class, getUserId(user))).now();
     }
 
     /**
