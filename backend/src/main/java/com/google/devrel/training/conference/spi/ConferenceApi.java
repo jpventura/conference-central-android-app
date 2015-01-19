@@ -522,7 +522,7 @@ public class ConferenceApi {
         }
 
         // Get the userId
-        final String userId = user.getUserId();
+        final String userId = getUserId(user);
 
         TxResult<Boolean> result = ofy().transact(new Work<TxResult<Boolean>>() {
             @Override
