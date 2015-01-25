@@ -45,11 +45,9 @@ import com.google.devrel.training.conference.form.ProfileForm;
 import com.google.devrel.training.conference.form.ProfileForm.TeeShirtSize;
 import com.google.devrel.training.conference.form.SessionForm;
 import com.google.devrel.training.conference.form.SessionForm.TypeOfSession;
-import com.google.devrel.training.conference.form.SessionQueryForm;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.Objectify;
 import com.googlecode.objectify.Work;
-import com.googlecode.objectify.cmd.Query;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -773,5 +771,137 @@ public class ConferenceApi {
         });
 
         return result.getResult();
+    }
+
+    /**
+     * Add session to user wishlist.
+     *
+     * @param user An user who invokes this method, null when the user is not signed in.
+     * @param webSafeSessionKey The String representation of the Session Key.
+     * @return Boolean true when success, otherwise false
+     * @throws UnauthorizedException when the user is not signed in.
+     * @throws NotFoundException when there is no Session with the given web safe Session key.
+     */
+    @ApiMethod(
+            name = "addSessionToWishlist",
+            path = "session/{webSafeSessionKey}/wishlist",
+            httpMethod = HttpMethod.POST
+    )
+    public WrappedBoolean addSessionToWishlist(final User user,
+            @Named("webSafeSessionKey") final String webSafeSessionKey)
+            throws ConflictException, ForbiddenException, NotFoundException, UnauthorizedException {
+        if (null == user) {
+            throw new UnauthorizedException("Authorization required.");
+        }
+
+        final Profile profile = getProfileFromUser(user, getUserId(user));
+        if (null == profile) {
+            throw new NotFoundException("Profile doesn't exist.");
+        }
+
+        TxResult<Boolean> result = ofy().transact(new Work<TxResult<Boolean>>() {
+            @Override
+            public TxResult<Boolean> run() {
+                Key<Session> sessionKey = Key.create(webSafeSessionKey);
+                Session session = ofy().load().key(sessionKey).now();
+
+                if (null == session) {
+                    String message = "No session found with key: " + webSafeSessionKey;
+                    return new TxResult<>(new NotFoundException(message));
+                }
+                try {
+                    profile.addSessionToWishlist(webSafeSessionKey);
+                    ofy().save().entity(profile).now();
+                    return new TxResult(true);
+                } catch (IllegalArgumentException e) {
+                    String message = "You have already add for this session to wishlist";
+                    return new TxResult<>(new ConflictException(message));
+                }
+            }
+        });
+
+        return new WrappedBoolean(result.getResult());
+    }
+
+    /**
+     * Remove session from user wishlist.
+     *
+     * @param user An user who invokes this method, null when the user is not signed in.
+     * @param webSafeSessionKey The String representation of the Session Key.
+     * @return Boolean true when success, otherwise false
+     * @throws UnauthorizedException when the user is not signed in.
+     * @throws NotFoundException when there is no Session with the given web safe Session key.
+     */
+    @ApiMethod(
+            name = "removeSessionFromWishlist",
+            path = "session/{webSafeSessionKey}/wishlist",
+            httpMethod = HttpMethod.DELETE
+    )
+    public WrappedBoolean removeSessionFromWishlist(final User user,
+            @Named("webSafeSessionKey") final String webSafeSessionKey)
+            throws ConflictException, ForbiddenException, NotFoundException, UnauthorizedException {
+        if (null == user) {
+            throw new UnauthorizedException("Authorization required.");
+        }
+
+        final Profile profile = getProfileFromUser(user, getUserId(user));
+        if (null == profile) {
+            throw new NotFoundException("Profile doesn't exist.");
+        }
+
+        TxResult<Boolean> result = ofy().transact(new Work<TxResult<Boolean>>() {
+            @Override
+            public TxResult<Boolean> run() {
+                Key<Session> sessionKey = Key.create(webSafeSessionKey);
+                Session session = ofy().load().key(sessionKey).now();
+
+                if (null == session) {
+                    String message = "No session found with key: " + webSafeSessionKey;
+                    return new TxResult<>(new NotFoundException(message));
+                }
+                try {
+                    profile.removeSessionFromWishlist(webSafeSessionKey);
+                    ofy().save().entity(profile).now();
+                    return new TxResult(true);
+                } catch (IllegalArgumentException e) {
+                    String message = "You have not added this session";
+                    return new TxResult<>(new ConflictException(message));
+                }
+            }
+        });
+
+        return new WrappedBoolean(result.getResult());
+    }
+
+    /**
+     * Returns a collection of Session Object that the user is wish to attend.
+     *
+     * @param user An user who invokes this method, null when the user is not signed in.
+     * @return a Collection of sessions that the user is wish to attend.
+     * @throws NotFoundException when the Profile object of the user is null.
+     * @throws UnauthorizedException when the User object is null.
+     */
+    @ApiMethod(
+            name = "getSessionsInWishlist",
+            path = "session/wishlist",
+            httpMethod = HttpMethod.GET
+    )
+    public Collection<Session> getSessionsInWishlist(final User user)
+            throws NotFoundException, UnauthorizedException {
+        if (null == user) {
+            throw new UnauthorizedException("Authorization required.");
+        }
+
+        Profile profile = getProfileFromUser(user, getUserId(user));
+        if (null == profile) {
+            throw new NotFoundException("Profile doesn't exist.");
+        }
+
+        List<Key<Session>> sessionKeysToAttend = new ArrayList<>();
+        for (String webSafeSessionKey : profile.getSessionsInWishlist()) {
+            sessionKeysToAttend.add(Key.<Session>create(webSafeSessionKey));
+        }
+
+        return ofy().load().keys(sessionKeysToAttend).values();
     }
 }

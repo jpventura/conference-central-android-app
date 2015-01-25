@@ -17,6 +17,7 @@ package com.google.devrel.training.conference.domain;
 
 import com.google.common.collect.ImmutableList;
 import com.google.devrel.training.conference.form.ProfileForm.TeeShirtSize;
+import com.google.gson.Gson;
 import com.googlecode.objectify.annotation.Cache;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
@@ -56,6 +57,8 @@ public class Profile {
      * Keys of the conferences that this user registers to attend.
      */
     private List<String> conferenceKeysToAttend = new ArrayList<>(0);
+
+    private List<String> sessionKeysWishlist = new ArrayList<>(0);
 
     /**
      * Just making the default constructor private.
@@ -155,5 +158,50 @@ public class Profile {
         } else {
             throw new IllegalArgumentException("Invalid conferenceKey: " + conferenceKey);
         }
+    }
+
+    /**
+     * Getter for sessionKeysWishlist.
+     * @return an immutable copy of sessionKeysWishlist.
+     */
+    public List<String> getSessionsInWishlist() {
+        return ImmutableList.copyOf(sessionKeysWishlist);
+    }
+
+    /**
+     * Adds a sessionWebSafeKey to sessionKeysWishlist.
+     *
+     * The method addSessionToWishlist is not thread-safe, but we need a transaction for
+     * calling this method after all, so it is not a practical issue.
+     *
+     * @param sessionWebSafeKey a web safe String representation of the session Key.
+     */
+    public void addSessionToWishlist(String sessionWebSafeKey) {
+        if (sessionKeysWishlist.contains(sessionWebSafeKey)) {
+            throw new IllegalArgumentException("Invalid sessionKey: " + sessionWebSafeKey);
+        } else {
+            sessionKeysWishlist.add(sessionWebSafeKey);
+        }
+    }
+
+    /**
+     * Remove a sessionWebSafeKey to sessionKeysWishlist.
+     *
+     * The method removeSessionToWishlist is not thread-safe, but we need a transaction for
+     * calling this method after all, so it is not a practical issue.
+     *
+     * @param sessionWebSafeKey a web safe String representation of the session Key.
+     */
+    public void removeSessionFromWishlist(String sessionWebSafeKey) {
+        if (sessionKeysWishlist.contains(sessionWebSafeKey)) {
+            sessionKeysWishlist.remove(sessionWebSafeKey);
+        } else {
+            throw new IllegalArgumentException("Invalid sessionKey: " + sessionWebSafeKey);
+        }
+    }
+
+    @Override
+    public String toString() {
+        return new Gson().toJson(this).toString();
     }
 }
