@@ -20,9 +20,17 @@
       <servlet-name>SendConfirmationEmailServlet</servlet-name>
       <servlet-class>com.google.devrel.training.conference.servlet.SendConfirmationEmailServlet</servlet-class>
     </servlet>
+    <servlet>
+      <servlet-name>SetSpeakerAnnouncementServlet</servlet-name>
+      <servlet-class>com.google.devrel.training.conference.servlet.SetSpeakerAnnouncementServlet</servlet-class>
+    </servlet>
     <servlet-mapping>
       <servlet-name>SendConfirmationEmailServlet</servlet-name>
       <url-pattern>/crons/send_confirmation_email</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+      <servlet-name>SetSpeakerAnnouncementServlet</servlet-name>
+      <url-pattern>/crons/set_featured_speaker</url-pattern>
     </servlet-mapping>
     <servlet-mapping>
         <servlet-name>SystemServiceServlet</servlet-name>

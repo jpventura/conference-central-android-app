@@ -988,4 +988,27 @@ public class ConferenceApi {
 
         return sessionsByTime;
     }
+
+    /**
+     * If a new session is added to a conference and it has a already present speaker, add a new
+     * Memcache entry with the speaker and session names.
+     *
+     * @return Announcement with speaker and session names.
+     */
+    @ApiMethod(
+            name = "getFeaturedSpeaker",
+            path = "featured_speaker",
+            httpMethod = HttpMethod.GET
+    )
+    public Announcement getFeaturedSpeaker() {
+        MemcacheService memcacheService = MemcacheServiceFactory.getMemcacheService();
+        String featuredSpeakerKey = Constants.MEMCACHE_FEATURED_SPEAKER_KEY;
+        Object message = memcacheService.get(featuredSpeakerKey);
+
+        if (null != message) {
+            return new Announcement(message.toString());
+        }
+
+        return null;
+    }
 }
