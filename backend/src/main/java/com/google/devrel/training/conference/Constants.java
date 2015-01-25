@@ -30,6 +30,8 @@ public class Constants {
 
     public static final String MEMCACHE_ANNOUNCEMENTS_KEY = "RECENT_ANNOUNCEMENTS";
 
+    public static final String MEMCACHE_FEATURED_SPEAKER_KEY = "FEATURED_SPEAKERS";
+
     // Replace the constant with your owner domain (it will have your appspot project ID)
     public static final String OWNER_DOMAIN = "noqodo.appspot.com";
 }
