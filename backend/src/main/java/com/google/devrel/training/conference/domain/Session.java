@@ -60,6 +60,7 @@ public class Session {
     @Index
     private TypeOfSession typeOfSession;
 
+    @Index
     private Date date;
 
     @Index
