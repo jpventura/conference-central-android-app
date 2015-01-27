@@ -45,12 +45,14 @@ import com.google.devrel.training.conference.form.ProfileForm;
 import com.google.devrel.training.conference.form.ProfileForm.TeeShirtSize;
 import com.google.devrel.training.conference.form.SessionForm;
 import com.google.devrel.training.conference.form.SessionForm.TypeOfSession;
+import com.google.devrel.training.conference.form.SessionQueryForm;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.Objectify;
 import com.googlecode.objectify.Work;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -903,5 +905,87 @@ public class ConferenceApi {
         }
 
         return ofy().load().keys(sessionKeysToAttend).values();
+    }
+
+    /**
+     * Get the conference sessions that happen a given day of date interval.
+     *
+     * @param startDate Start date interval.
+     * @param endDate End date interval.
+     *
+     * @return List of Session object that happen on given interval.
+     */
+    @ApiMethod(
+            name = "getConferenceSessionsByInterval",
+            path = "getConferenceSessionsByInterval",
+            httpMethod = HttpMethod.GET
+    )
+    public Collection<Session> getConferenceSessionsByInterval(@Named("startDate") Date startDate,
+            @Named("endDate") Date endDate) throws NotFoundException{
+        List<Session> sessionsStartingAfter = ofy().load().type(Session.class)
+                .order("date")
+                .filter("date >=", startDate)
+                .list();
+
+        List<Session> sessionsEndingAfter = ofy().load().type(Session.class)
+                .order("date")
+                .filter("date <=", endDate).list();
+
+        List<Session> sessionsInterval = new ArrayList<>();
+        for (Session session : sessionsStartingAfter) {
+            if (sessionsEndingAfter.contains(session)) {
+                sessionsInterval.add(session);
+            }
+        }
+
+        return sessionsInterval;
+    }
+
+    @ApiMethod(
+            name = "querySessions",
+            path = "querySessions",
+            httpMethod = HttpMethod.POST
+    )
+    public Collection<Session> querySessions(SessionQueryForm sessionQueryForm) {
+        List<Session> sessionList = new ArrayList<>(0);
+        for (Session session : sessionQueryForm.getQuery()) {
+            sessionList.add(session);
+        }
+
+        return sessionList;
+    }
+
+    /**
+     * Returns a collection of Session Object that the user is wish to attend.
+     *
+     * @param user An user who invokes this method, null when the user is not signed in.
+     * @return a Collection of sessions that the user is wish to attend.
+     * @throws NotFoundException when the Profile object of the user is null.
+     * @throws UnauthorizedException when the User object is null.
+     */
+    @ApiMethod(
+            name = "queryRelatedProblem",
+            path = "queryRelatedProblem",
+            httpMethod = HttpMethod.GET
+    )
+    public Collection<Session> queryRelatedProblem(final User user,
+            @Named("excludeTypeOfSession") final TypeOfSession excludeTypeOfSession,
+            @Named("beforeTime") final String startTime) throws UnauthorizedException {
+        if (null == user) {
+            throw new UnauthorizedException("Authorization required.");
+        }
+
+        List<Session> sessionsByTime = ofy().load().type(Session.class)
+                .order("startTime")
+                .filter("startTime <", startTime)
+                .list();
+
+        for (Session session : sessionsByTime) {
+            if (session.getTypeOfSession().equals(excludeTypeOfSession)) {
+                sessionsByTime.remove(session);
+            }
+        }
+
+        return sessionsByTime;
     }
 }
