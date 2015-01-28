@@ -31,6 +31,7 @@ import com.googlecode.objectify.annotation.Index;
 import com.googlecode.objectify.annotation.Parent;
 import com.googlecode.objectify.condition.IfNotDefault;
 
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -119,6 +120,8 @@ public class Conference {
      */
     @Index
     private int seatsAvailable;
+
+    private List<String> sessionKeys = new ArrayList<>(0);
 
     /**
      * Just making the default constructor private.
@@ -264,6 +267,26 @@ public class Conference {
             throw new IllegalArgumentException("The number of seats will exceeds the capacity.");
         }
         seatsAvailable = seatsAvailable + number;
+    }
+
+    /**
+     * Getter for sessionKeys.
+     * @return an immutable copy of sessionKeys.
+     */
+    public List<String> getSessionsKeys() {
+        return ImmutableList.copyOf(sessionKeys);
+    }
+
+    public void addSessionsKeys(String sessionKey) {
+        sessionKeys.add(sessionKey);
+    }
+
+    public void removeSessionsKeys(String sessionKey) {
+        if (sessionKeys.contains(sessionKey)) {
+            sessionKeys.remove(sessionKey);
+        } else {
+            throw new IllegalArgumentException("Invalid sessionKey: " + sessionKey);
+        }
     }
 
     @Override

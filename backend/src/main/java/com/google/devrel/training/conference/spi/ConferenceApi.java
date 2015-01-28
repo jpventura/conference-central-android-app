@@ -38,10 +38,14 @@ import com.google.devrel.training.conference.domain.Announcement;
 import com.google.devrel.training.conference.domain.AppEngineUser;
 import com.google.devrel.training.conference.domain.Conference;
 import com.google.devrel.training.conference.domain.Profile;
+import com.google.devrel.training.conference.domain.Session;
 import com.google.devrel.training.conference.form.ConferenceForm;
 import com.google.devrel.training.conference.form.ConferenceQueryForm;
 import com.google.devrel.training.conference.form.ProfileForm;
 import com.google.devrel.training.conference.form.ProfileForm.TeeShirtSize;
+import com.google.devrel.training.conference.form.SessionForm;
+import com.google.devrel.training.conference.form.SessionForm.TypeOfSession;
+import com.google.devrel.training.conference.form.SessionQueryForm;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.Objectify;
 import com.googlecode.objectify.Work;
@@ -50,6 +54,7 @@ import com.googlecode.objectify.cmd.Query;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.logging.Logger;
 
 /**
  * Defines conference APIs.
@@ -77,6 +82,8 @@ import java.util.List;
         )
 )
 public class ConferenceApi {
+    private static final Logger LOG = Logger.getLogger(ConferenceApi.class.getName());
+
     /*
      * Get the display name from the user's email. For example, if the email is
      * lemoncake@example.com, then the display name becomes "lemoncake."
@@ -292,7 +299,11 @@ public class ConferenceApi {
      * @return A newly created Conference Object.
      * @throws UnauthorizedException when the user is not signed in.
      */
-    @ApiMethod(name = "createConference", path = "conference", httpMethod = HttpMethod.POST)
+    @ApiMethod(
+            name = "createConference",
+            path = "conference",
+            httpMethod = HttpMethod.POST
+    )
     public Conference createConference(final User user, final ConferenceForm conferenceForm)
             throws UnauthorizedException {
         if (null == user) {
@@ -636,5 +647,131 @@ public class ConferenceApi {
         }
         // NotFoundException is actually thrown here.
         return new WrappedBoolean(result.getResult());
+    }
+
+    /**
+     * Given a conference, return all its sessions objects
+     *
+     * @param user An user who invokes this method, null when the user is not signed in.
+     * @param webSafeConferenceKey The String representation of the Conference Key.
+     * @throws NotFoundException when there is no Conference with the given conferenceId.
+     * @return a list of Sessions of the given conference.
+     */
+    @ApiMethod(
+            name = "getConferenceSessions",
+            path = "conference/{webSafeConferenceKey}/session",
+            httpMethod = HttpMethod.GET
+    )
+    public Collection<Session> getConferenceSessions(final User user,
+            @Named("webSafeConferenceKey") final String webSafeConferenceKey)
+            throws NotFoundException, UnauthorizedException {
+        if (null == user) {
+            throw new UnauthorizedException("Unauthorized.");
+        }
+
+        Key<Conference> conferenceKey = Key.create(webSafeConferenceKey);
+        Conference conference = ofy().load().key(conferenceKey).now();
+        if (null == conference) {
+            String message = "No Conference found with the key: " + webSafeConferenceKey;
+            throw new NotFoundException(message);
+        }
+
+        return ofy().load().type(Session.class).ancestor(conferenceKey).list();
+    }
+
+    @ApiMethod(
+            name = "getConferenceSessionsByType",
+            path = "conference/{webSafeConferenceKey}/type_of_session/{typeOfSession}",
+            httpMethod = HttpMethod.GET
+    )
+    public Collection<Session> getConferenceSessionsByType(final User user,
+            @Named("webSafeConferenceKey") final String webSafeConferenceKey,
+            @Named("typeOfSession") TypeOfSession typeOfSession)
+            throws NotFoundException, UnauthorizedException {
+        if (null == user) {
+            throw new UnauthorizedException("Unauthorized.");
+        }
+
+        Key<Conference> conferenceKey = Key.create(webSafeConferenceKey);
+
+        // If conference is null, throw NotFoundException
+        Conference conference = ofy().load().key(conferenceKey).now();
+        if (null == conference) {
+            throw new NotFoundException("Not found");
+        }
+
+        return ofy().load().type(Session.class)
+              .ancestor(Key.create(webSafeConferenceKey))
+              .filter("typeOfSession =", typeOfSession).list();
+    }
+
+    @ApiMethod(
+            name = "getConferenceSessionsBySpeaker",
+            path = "getConferenceSessionsBySpeaker",
+            httpMethod = HttpMethod.GET
+    )
+    public Collection<Session> getConferenceSessionsBySpeaker(final User user,
+            @Named("speaker") String speaker) throws UnauthorizedException {
+        if (null == user) {
+            throw new UnauthorizedException("Unauthorized");
+        }
+
+        return ofy().load().type(Session.class).filter("speaker =", speaker).list();
+    }
+
+    /**
+     * Returns a new conference session.
+     *
+     * @param user An user who invokes this method, null when the user is not signed in.
+     * @return A conference session.
+     * @throws ForbiddenException when the requesting user is not the conference organizer.
+     * @throws UnauthorizedException when the User object is null.
+     */
+    @ApiMethod(
+            name = "createSession",
+            path = "conference/{webSafeConferenceKey}/session",
+            httpMethod = HttpMethod.POST
+    )
+    public Session createSession(final User user,
+        @Named("webSafeConferenceKey") final String webSafeConferenceKey,
+        final SessionForm sessionForm) throws ConflictException, ForbiddenException,
+        NotFoundException, UnauthorizedException {
+
+        TxResult<Session> result = ofy().transact(new Work<TxResult<Session>>() {
+            @Override
+            public TxResult<Session> run() {
+                // If user is not authorized, throws UnauthorizedException
+                if (null == user) {
+                    return new TxResult<>(new UnauthorizedException("Unauthorized"));
+                }
+
+                Profile profile = getProfileFromUser(user, getUserId(user));
+                if (null == profile) {
+                    return new TxResult<>(new NotFoundException("Profile doesn't exist."));
+                }
+
+                // If conference does not exist, throws NotFoundException
+                Key<Conference> conferenceKey = Key.create(webSafeConferenceKey);
+                Conference conference = ofy().load().key(conferenceKey).now();
+                if (null == conference) {
+                    return new TxResult<>(new NotFoundException("Not found"));
+                }
+
+                // If user is not the conference organizer, throws ForbiddenException
+                if (!conference.getOrganizerUserId().equals(getUserId(user))) {
+                    return new TxResult<>(new ForbiddenException("Forbidden"));
+                }
+
+                // Create session and add to its conference list
+                Key<Session> sessionKey = factory().allocateId(conferenceKey, Session.class);
+                Session session = new Session(sessionKey.getId(), webSafeConferenceKey, sessionForm);
+                conference.addSessionsKeys(session.getWebSafeKey());
+                ofy().save().entities(session, conference).now();
+
+                return new TxResult<>(session);
+            }
+        });
+
+        return result.getResult();
     }
 }
