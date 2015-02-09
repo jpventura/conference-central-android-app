@@ -344,32 +344,40 @@ public class ConferenceApi {
             throw new UnauthorizedException("Authorization required");
         }
 
-        // TODO
         // Get the user ID.
-        final String userId = null;
+        final String userId = getUserId(user);
 
         TxResult<Conference> result = ofy().transact(new Work<TxResult<Conference>>() {
             @Override
             public TxResult<Conference> run() {
-                // TODO
                 // Get the conference key -- you can get it from websafeConferenceKey
                 // Will throw ForbiddenException if the key cannot be created
-                Key<Conference> conferenceKey = null;
+                Key<Conference> conferenceKey = Key.create(websafeConferenceKey);
 
-                // TODO
                 // Get the Conference entity from the datastore
-                Conference conference = null;
+                Conference conference = ofy().load().key(conferenceKey).now();
+                if (conference == null) {
+                    String message = "No Conference found with the key: " + websafeConferenceKey;
+                    return new TxResult<>(new NotFoundException(message));
+                }
 
-                // TODO
                 // Get the user's Profile entity
-                Profile profile = null;
+                Profile profile = ofy().load().key(Key.create(Profile.class, userId)).now();
+                if (null == profile) {
+                    String message = "Profile does not exist.";
+                    return new TxResult<>(new ForbiddenException(message));
+                }
 
-                // TODO
                 // Check if user is the conference owner.
+                if (!conference.getOrganizerUserId().equals(userId)) {
+                    String message = "Only the owner can update the conference.";
+                    return new TxResult<>(new ForbiddenException(message));
+                }
 
-                // TODO
                 // Update the conference with the conferenceForm sent from the client.
-                return null;
+                conference.updateWithConferenceForm(conferenceForm);
+                ofy().save().entity(conference).now();
+                return new TxResult<>(conference);
             }
         });
 
