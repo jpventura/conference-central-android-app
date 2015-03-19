@@ -58,6 +58,9 @@ public class Profile {
      */
     private List<String> conferenceKeysToAttend = new ArrayList<>(0);
 
+    /**
+     * Keys of the sessions that this user wishes to attend.
+     */
     private List<String> sessionKeysWishlist = new ArrayList<>(0);
 
     /**
