@@ -21,7 +21,7 @@
         android:theme="@style/AppTheme">
         <meta-data android:name="com.google.android.gms.version" android:value="@integer/google_play_services_version" />
         <activity
-            android:name="com.udacity.devrel.training.conference.android.MainActivity"
+            android:name=".presenter.LoginPresenter"
             android:label="@string/app_name"
             android:screenOrientation="portrait">
             <intent-filter>
@@ -29,6 +29,11 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+        </activity>
+        <activity
+            android:name="com.udacity.devrel.training.conference.android.MainActivity"
+            android:label="@string/app_name"
+            android:screenOrientation="portrait">
         </activity>
     </application>
 
