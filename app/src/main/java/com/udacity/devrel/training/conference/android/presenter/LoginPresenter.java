@@ -19,13 +19,13 @@ package com.udacity.devrel.training.conference.android.presenter;
 import android.accounts.AccountAuthenticatorActivity;
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 
 import com.udacity.devrel.training.conference.android.MainActivity;
 import com.udacity.devrel.training.conference.android.R;
+import com.udacity.devrel.training.conference.android.common.Connection;
+import com.udacity.devrel.training.conference.android.common.Connection.State;
 import com.udacity.devrel.training.conference.android.common.GoogleConnection;
-import com.udacity.devrel.training.conference.android.common.State;
 import com.udacity.devrel.training.conference.android.view.LoginView;
 
 import java.util.Observable;
@@ -35,7 +35,7 @@ public class LoginPresenter extends AccountAuthenticatorActivity
         implements LoginView.OnLoginListener, Observer {
 
     private LoginView loginView;
-    private GoogleConnection googleConnection;
+    private Connection connection;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,38 +43,22 @@ public class LoginPresenter extends AccountAuthenticatorActivity
         loginView = (LoginView) View.inflate(this, R.layout.view_login, null);
         loginView.setOnLoginListener(this);
         setContentView(loginView);
-        googleConnection = GoogleConnection.getInstance(this);
-    }
-
-    @Override
-    protected void onStart() {
-        super.onStart();
-        googleConnection.addObserver(this);
-        // googleConnection.connect();
-
-        Log.e("ventura", "onStart(" + googleConnection.getState() + ")");
-        if (googleConnection.isOpened()) {
-            navigateToHome();
-        }
-    }
-
-    @Override
-    protected void onStop() {
-        super.onStop();
-        googleConnection.deleteObserver(this);
+        connection = GoogleConnection.getInstance(this);
+        connection.addObserver(this);
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        googleConnection.disconnect();
+        connection.deleteObserver(this);
+        connection.disconnect();
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         switch (requestCode) {
             case GoogleConnection.REQUEST_CODE:
-                googleConnection.onActivityResult(requestCode);
+                connection.onActivityResult(resultCode);
                 break;
             default:
                 super.onActivityResult(requestCode, resultCode, data);
@@ -83,17 +67,14 @@ public class LoginPresenter extends AccountAuthenticatorActivity
 
     @Override
     public void onLogin() {
-        googleConnection.connect();
+        connection.connect();
     }
 
     @Override
     public void update(Observable observable, Object data) {
-        if ((observable == googleConnection) && State.OPENED.equals(data)) {
+        if ((observable == connection) && State.OPENED.equals(data)) {
             navigateToHome();
         }
-
-        Log.d("ventura", "LoginPresenter.update(" + data.toString() + ")");
-
     }
 
     private void navigateToHome() {

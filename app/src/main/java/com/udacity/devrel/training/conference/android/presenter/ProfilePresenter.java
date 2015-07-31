@@ -2,12 +2,12 @@ package com.udacity.devrel.training.conference.android.presenter;
 
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 
 import com.udacity.devrel.training.conference.android.R;
+import com.udacity.devrel.training.conference.android.common.Connection;
+import com.udacity.devrel.training.conference.android.common.Connection.State;
 import com.udacity.devrel.training.conference.android.common.GoogleConnection;
-import com.udacity.devrel.training.conference.android.common.State;
 import com.udacity.devrel.training.conference.android.view.ProfileView;
 
 import java.util.Observable;
@@ -17,7 +17,7 @@ public class ProfilePresenter extends ActionBarActivity
         implements Observer, ProfileView.OnProfileListener {
 
     private ProfileView profileView;
-    private GoogleConnection googleConnection;
+    private Connection connection;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -25,18 +25,18 @@ public class ProfilePresenter extends ActionBarActivity
         profileView = (ProfileView) View.inflate(this, R.layout.view_profile, null);
         profileView.setOnLoginListener(this);
         setContentView(profileView);
-        googleConnection = GoogleConnection.getInstance(this);
+        connection = GoogleConnection.getInstance(this);
     }
 
     @Override
     protected void onStart() {
         super.onStart();
-        googleConnection.addObserver(this);
+        connection.addObserver(this);
     }
 
     @Override
     public void update(Observable observable, Object data) {
-        if ((observable == googleConnection) && !State.OPENED.equals(data)) {
+        if ((observable == connection) && !State.OPENED.equals(data)) {
             finish();
         }
     }
@@ -44,17 +44,17 @@ public class ProfilePresenter extends ActionBarActivity
     @Override
     protected void onStop() {
         super.onStop();
-        googleConnection.deleteObserver(this);
+        connection.deleteObserver(this);
     }
 
     @Override
     public void onLogout() {
-        googleConnection.disconnect();
+        connection.disconnect();
     }
 
     @Override
     public void onRevoke() {
-        googleConnection.revokeAccessAndDisconnect();
+        connection.revoke();
     }
 
 

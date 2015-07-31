@@ -17,8 +17,9 @@ package com.udacity.devrel.training.conference.android;
 
 import com.google.android.gms.auth.GoogleAuthUtil;
 import com.google.android.gms.common.AccountPicker;
+import com.udacity.devrel.training.conference.android.common.Connection;
+import com.udacity.devrel.training.conference.android.common.Connection.State;
 import com.udacity.devrel.training.conference.android.common.GoogleConnection;
-import com.udacity.devrel.training.conference.android.common.State;
 import com.udacity.devrel.training.conference.android.presenter.ProfilePresenter;
 import com.udacity.devrel.training.conference.android.utils.ConferenceUtils;
 import com.udacity.devrel.training.conference.android.utils.Utils;
@@ -45,7 +46,7 @@ import java.util.Observer;
  */
 public class MainActivity extends ActionBarActivity implements Observer {
 
-    private static final String LOG_TAG = "MainActivity";
+    public static final String TAG = MainActivity.class.getSimpleName();
 
     /**
      * Activity result indicating a return from the Google account selection intent.
@@ -56,7 +57,7 @@ public class MainActivity extends ActionBarActivity implements Observer {
     private String mEmailAccount;
 
     private ConferenceListFragment mConferenceListFragment;
-    private GoogleConnection googleConnection;
+    private Connection connection;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -71,22 +72,13 @@ public class MainActivity extends ActionBarActivity implements Observer {
                     .commit();
         }
 
-        googleConnection = GoogleConnection.getInstance(this);
-    }
-
-    @Override
-    protected void onStart() {
-        super.onStart();
-        if(googleConnection.isOpened()) {
-            googleConnection.addObserver(this);
-        } else {
-            finish();
-        }
+        connection = GoogleConnection.getInstance(this);
+        connection.addObserver(this);
     }
 
     @Override
     public void update(Observable observable, Object data) {
-        if ((observable == googleConnection) && !State.OPENED.equals(data)) {
+        if ((observable == connection) && !State.OPENED.equals(data)) {
             finish();
         }
     }
@@ -94,7 +86,7 @@ public class MainActivity extends ActionBarActivity implements Observer {
     @Override
     protected void onStop() {
         super.onStop();
-        googleConnection.deleteObserver(this);
+        connection.deleteObserver(this);
     }
 
     @Override
@@ -104,7 +96,7 @@ public class MainActivity extends ActionBarActivity implements Observer {
             mAuthTask.cancel(true);
             mAuthTask = null;
         }
-        googleConnection.deleteObserver(this);
+        connection.deleteObserver(this);
     }
 
     protected void onResume() {
@@ -188,14 +180,21 @@ public class MainActivity extends ActionBarActivity implements Observer {
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-
-        if (requestCode == ACTIVITY_RESULT_FROM_ACCOUNT_SELECTION && resultCode == RESULT_OK) {
-            // This path indicates the account selection activity resulted in the user selecting a
-            // Google account and clicking OK.
-            mEmailAccount = data.getStringExtra(AccountManager.KEY_ACCOUNT_NAME);
-        } else {
-            finish();
+        switch (requestCode) {
+            case ACTIVITY_RESULT_FROM_ACCOUNT_SELECTION:
+                if (RESULT_OK == resultCode) {
+                    // This path indicates the account selection activity resulted in the user selecting a
+                    // Google account and clicking OK.
+                    mEmailAccount = data.getStringExtra(AccountManager.KEY_ACCOUNT_NAME);
+                } else {
+                    finish();
+                }
+                break;
+            case Connection.REQUEST_CODE:
+                connection.onActivityResult(resultCode);
+                break;
+            default:
+                super.onActivityResult(requestCode, resultCode, data);
         }
     }
 
@@ -228,7 +227,7 @@ public class MainActivity extends ActionBarActivity implements Observer {
 
         @Override
         protected Boolean doInBackground(String... emailAccounts) {
-            Log.i(LOG_TAG, "Background task started.");
+            Log.i(TAG, "Background task started.");
 
             if (!Utils.checkGooglePlayServicesAvailable(MainActivity.this)) {
                 publishProgress(R.string.gms_not_available);
