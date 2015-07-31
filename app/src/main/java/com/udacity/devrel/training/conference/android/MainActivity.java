@@ -15,10 +15,11 @@
 
 package com.udacity.devrel.training.conference.android;
 
-import com.google.android.gms.auth.GoogleAuthException;
 import com.google.android.gms.auth.GoogleAuthUtil;
 import com.google.android.gms.common.AccountPicker;
-import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential;
+import com.udacity.devrel.training.conference.android.common.GoogleConnection;
+import com.udacity.devrel.training.conference.android.common.State;
+import com.udacity.devrel.training.conference.android.presenter.ProfilePresenter;
 import com.udacity.devrel.training.conference.android.utils.ConferenceUtils;
 import com.udacity.devrel.training.conference.android.utils.Utils;
 
@@ -36,14 +37,13 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Toast;
 
-import java.io.IOException;
-
-import static com.udacity.devrel.training.conference.android.BuildConfig.DEBUG;
+import java.util.Observable;
+import java.util.Observer;
 
 /**
  * Sample Android application for the Conference Central class for Google Cloud Endpoints.
  */
-public class MainActivity extends ActionBarActivity {
+public class MainActivity extends ActionBarActivity implements Observer {
 
     private static final String LOG_TAG = "MainActivity";
 
@@ -56,6 +56,7 @@ public class MainActivity extends ActionBarActivity {
     private String mEmailAccount;
 
     private ConferenceListFragment mConferenceListFragment;
+    private GoogleConnection googleConnection;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -70,6 +71,30 @@ public class MainActivity extends ActionBarActivity {
                     .commit();
         }
 
+        googleConnection = GoogleConnection.getInstance(this);
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        if(googleConnection.isOpened()) {
+            googleConnection.addObserver(this);
+        } else {
+            finish();
+        }
+    }
+
+    @Override
+    public void update(Observable observable, Object data) {
+        if ((observable == googleConnection) && !State.OPENED.equals(data)) {
+            finish();
+        }
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        googleConnection.deleteObserver(this);
     }
 
     @Override
@@ -79,6 +104,7 @@ public class MainActivity extends ActionBarActivity {
             mAuthTask.cancel(true);
             mAuthTask = null;
         }
+        googleConnection.deleteObserver(this);
     }
 
     protected void onResume() {
@@ -125,6 +151,9 @@ public class MainActivity extends ActionBarActivity {
                 break;
             case R.id.action_reload:
                 mConferenceListFragment.reload();
+                break;
+            case R.id.action_account:
+                startActivity(new Intent(this, ProfilePresenter.class));
                 break;
         }
         return true;

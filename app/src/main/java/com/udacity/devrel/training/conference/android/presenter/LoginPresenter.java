@@ -50,14 +50,35 @@ public class LoginPresenter extends AccountAuthenticatorActivity
     protected void onStart() {
         super.onStart();
         googleConnection.addObserver(this);
-        googleConnection.connect();
+        // googleConnection.connect();
+
+        Log.e("ventura", "onStart(" + googleConnection.getState() + ")");
+        if (googleConnection.isOpened()) {
+            navigateToHome();
+        }
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        googleConnection.deleteObserver(this);
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        googleConnection.deleteObserver(this);
         googleConnection.disconnect();
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        switch (requestCode) {
+            case GoogleConnection.REQUEST_CODE:
+                googleConnection.onActivityResult(requestCode);
+                break;
+            default:
+                super.onActivityResult(requestCode, resultCode, data);
+        }
     }
 
     @Override
@@ -68,10 +89,15 @@ public class LoginPresenter extends AccountAuthenticatorActivity
     @Override
     public void update(Observable observable, Object data) {
         if ((observable == googleConnection) && State.OPENED.equals(data)) {
-            startActivity(new Intent(this, MainActivity.class));
-        } else {
-            Log.d("ventura", data.toString());
+            navigateToHome();
         }
+
+        Log.d("ventura", "LoginPresenter.update(" + data.toString() + ")");
+
+    }
+
+    private void navigateToHome() {
+        startActivity(new Intent(this, MainActivity.class));
     }
 
 }

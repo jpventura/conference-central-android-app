@@ -27,5 +27,9 @@
     <string name="gms_not_available">Google Play services is not available</string>
     <string name="clear_account_message">Are you sure you want to clear the saved account? If you decide to do so, application will exit.</string>
     <string name="reload">Reload</string>
+    <string name="account">Account</string>
+    <string name="title_activity_account_presenter">AccountPresenter</string>
+
+    <string name="hello_world">Hello world!</string>
 
 </resources>

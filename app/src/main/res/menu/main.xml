@@ -3,6 +3,10 @@
     xmlns:tools="http://schemas.android.com/tools"
     tools:context="com.udacity.devrel.training.conference.android.MainActivity" >
     <item
+        android:id="@+id/action_account"
+        android:title="@string/account"
+        app:showAsAction="never"/>
+    <item
         android:id="@+id/action_reload"
         android:title="@string/reload"
         android:icon="@drawable/ic_action_navigation_refresh"
