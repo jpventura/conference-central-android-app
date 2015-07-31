@@ -110,7 +110,7 @@ public class GoogleConnection extends Connection
 
     @Override
     public void onConnected(Bundle connectionHint) {
-        changeState(State.OPENED);
+        getAccessTokenInBackground();
     }
 
     @Override
@@ -147,6 +147,20 @@ public class GoogleConnection extends Connection
                 .addOnConnectionFailedListener(this)
                 .addApi(Plus.API, Plus.PlusOptions.builder().build())
                 .addScope(new Scope("email")).build();
+    }
+
+    private void getAccessTokenInBackground() {
+        GetAccessTokenTask getAccessTokenTask = new GetAccessTokenTask(mGoogleApiClient) {
+            @Override
+            protected void onPostExecute(String accessToken) {
+                if (null == accessToken) {
+                    changeState(State.CREATED);
+                } else {
+                    changeState(State.OPENED);
+                }
+            }
+        };
+        getAccessTokenTask.execute();
     }
 
 }
