@@ -1,3 +1,20 @@
+/*
+ * Copyright (C) 2014 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+
 package com.udacity.devrel.training.conference.android.accounts;
 
 import android.accounts.AbstractAccountAuthenticator;
@@ -9,19 +26,26 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
-import android.widget.Toast;
 
 
+import com.google.android.gms.auth.GoogleAuthException;
+import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential;
 import com.udacity.devrel.training.conference.android.R;
+import com.udacity.devrel.training.conference.android.common.Connection;
+import com.udacity.devrel.training.conference.android.common.GoogleConnection;
 import com.udacity.devrel.training.conference.android.presenter.LoginPresenter;
+
+import java.io.IOException;
 
 public class AccountAuthenticator extends AbstractAccountAuthenticator {
 
     private Context mContext;
+    private Connection mConnection;
 
     public AccountAuthenticator(Context context) {
         super(context);
         mContext = context;
+        mConnection = GoogleConnection.getInstance();
     }
 
     @Override
@@ -80,23 +104,42 @@ public class AccountAuthenticator extends AbstractAccountAuthenticator {
                                Account account,
                                String authTokenType,
                                Bundle options) throws NetworkErrorException {
-        Bundle bundle = (null == options) ? new Bundle() : options;
-
         if ((null == account) && (null == authTokenType)) {
+            Bundle bundle = new Bundle();
             bundle.putInt(AccountManager.KEY_ERROR_CODE, AccountManager.ERROR_CODE_BAD_REQUEST);
             return bundle;
         }
 
         if (!getAuthTokenType().equals(authTokenType)) {
+            Bundle bundle = new Bundle();
             bundle.putInt(AccountManager.KEY_ERROR_CODE, AccountManager.ERROR_CODE_BAD_ARGUMENTS);
             return bundle;
         }
 
-        bundle.putString(AccountManager.KEY_AUTHTOKEN, "afasdfasdf");
-        bundle.putString(AccountManager.KEY_ACCOUNT_NAME, account.name);
-        bundle.putString(AccountManager.KEY_ACCOUNT_TYPE, account.type);
+//        Bundle bundle = (null == options) ? new Bundle() : options;
+//        bundle.putString(AccountManager.KEY_ACCOUNT_NAME, account.name);
+//        bundle.putString(AccountManager.KEY_ACCOUNT_TYPE, account.type);
+        // String authToken = mConnection.getAuthToken(account);
+        Bundle authToken = mConnection.getToken(account);
 
-        return bundle;
+        if (null != authToken) {
+            authToken.putAll(options);
+            return authToken;
+        }
+
+        return addAccount(response, account.type, authTokenType, null, options);
+//
+//
+//        return (null == result) ? addAccount(response, account.type, authTokenType, null, options) : result;
+//        if (null == authToken) {
+//            final Intent intent = new Intent(mContext, LoginPresenter.class);
+//            intent.putExtra(AccountManager.KEY_ACCOUNT_AUTHENTICATOR_RESPONSE, response);
+//            bundle.putParcelable(AccountManager.KEY_INTENT, intent);
+//        } else {
+//            bundle.putString(AccountManager.KEY_AUTHTOKEN, authToken);
+//        }
+//
+//        return bundle;
     }
 
     @Override
