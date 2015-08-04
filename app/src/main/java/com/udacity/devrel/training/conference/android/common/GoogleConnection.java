@@ -18,6 +18,7 @@ package com.udacity.devrel.training.conference.android.common;
 
 import android.app.Activity;
 import android.content.IntentSender;
+import android.os.AsyncTask;
 import android.os.Bundle;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -42,6 +43,10 @@ public class GoogleConnection extends Connection
         if (null == sGoogleConnection) {
             sGoogleConnection = new GoogleConnection(activity);
         }
+        return sGoogleConnection;
+    }
+
+    public static Connection getInstance() {
         return sGoogleConnection;
     }
 
@@ -110,7 +115,7 @@ public class GoogleConnection extends Connection
 
     @Override
     public void onConnected(Bundle connectionHint) {
-        changeState(State.OPENED);
+        get.execute();
     }
 
     @Override
@@ -149,4 +154,15 @@ public class GoogleConnection extends Connection
                 .addScope(new Scope("email")).build();
     }
 
+    private AsyncTask<Void, Void, String> get = new AsyncTask<Void, Void, String>() {
+        @Override
+        protected String doInBackground(Void... params) {
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(String s) {
+            changeState(State.OPENED);
+        }
+    };
 }

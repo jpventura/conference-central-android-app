@@ -14,26 +14,25 @@
  * limitations under the License.
  */
 
-package com.udacity.devrel.training.conference.android.service;
+package com.udacity.devrel.training.conference.android;
 
-import android.app.Service;
 import android.content.Intent;
-import android.os.IBinder;
 
-import com.udacity.devrel.training.conference.android.accounts.AccountAuthenticator;
+import com.udacity.devrel.training.conference.android.service.GoogleService;
 
-public class AuthenticatorService extends Service {
+public class Application extends android.app.Application {
 
-    private AccountAuthenticator authenticator;
-
-    public AuthenticatorService() {
-        authenticator = new AccountAuthenticator(this);
-    }
-
+    private static final String TAG = Application.class.getSimpleName();
 
     @Override
-    public IBinder onBind(Intent intent) {
-        return authenticator.getIBinder();
+    public void onCreate() {
+        super.onCreate();
+        startService(new Intent(this, GoogleService.class));
+    }
+
+    @Override
+    public void onTerminate() {
+        super.onTerminate();
     }
 
 }

@@ -16,9 +16,16 @@
 
 package com.udacity.devrel.training.conference.android.presenter;
 
+import android.accounts.Account;
 import android.accounts.AccountAuthenticatorActivity;
+import android.accounts.AccountManager;
+import android.accounts.AccountManagerFuture;
+import android.accounts.AuthenticatorException;
+import android.accounts.OperationCanceledException;
 import android.content.Intent;
+import android.os.AsyncTask;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 
 import com.udacity.devrel.training.conference.android.MainActivity;
@@ -28,8 +35,10 @@ import com.udacity.devrel.training.conference.android.common.Connection.State;
 import com.udacity.devrel.training.conference.android.common.GoogleConnection;
 import com.udacity.devrel.training.conference.android.view.LoginView;
 
+import java.io.IOException;
 import java.util.Observable;
 import java.util.Observer;
+import java.util.concurrent.CancellationException;
 
 public class LoginPresenter extends AccountAuthenticatorActivity
         implements LoginView.OnLoginListener, Observer {
@@ -45,6 +54,42 @@ public class LoginPresenter extends AccountAuthenticatorActivity
         setContentView(loginView);
         connection = GoogleConnection.getInstance(this);
         connection.addObserver(this);
+
+        final AccountManager am = AccountManager.get(this);
+        String name = "joao.ventura@gmail.com";
+        String type = getString(R.string.auth_token_type);
+        final AccountManagerFuture<Bundle> future = am.getAuthToken(new Account(name, type), type, null, LoginPresenter.this, null, null);
+
+        AsyncTask<Void, Void, Bundle> xxx = new AsyncTask<Void, Void, Bundle>() {
+            @Override
+            protected Bundle doInBackground(Void... params) {
+                try {
+                    return future.getResult();
+                } catch(OperationCanceledException e) {
+                    Bundle bundle = new Bundle();
+                    bundle.putString("porra", "OperationCanceledException");
+                    bundle.putString(AccountManager.KEY_ERROR_MESSAGE, e.getMessage());
+                    return bundle;
+                } catch (AuthenticatorException e) {
+                    Bundle bundle = new Bundle();
+                    bundle.putString("porra", "AuthenticatorException");
+                    bundle.putString(AccountManager.KEY_ERROR_MESSAGE, e.getMessage());
+                    return bundle;
+                } catch (IOException e) {
+                    Bundle bundle = new Bundle();
+                    bundle.putString("porra", "IOException");
+                    bundle.putString(AccountManager.KEY_ERROR_MESSAGE, e.getMessage());
+                    return bundle;
+                }
+            }
+
+            @Override
+            protected void onPostExecute(Bundle bundle) {
+                Log.e("ventura", "bundle " + bundle.toString());
+            }
+        };
+
+        xxx.execute();
     }
 
     @Override
@@ -81,4 +126,15 @@ public class LoginPresenter extends AccountAuthenticatorActivity
         startActivity(new Intent(this, MainActivity.class));
     }
 
+    class GetBundle extends AsyncTask<Void, Void, Bundle> {
+        @Override
+        protected Bundle doInBackground(Void... params) {
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Bundle bundle) {
+            super.onPostExecute(bundle);
+        }
+    }
 }
