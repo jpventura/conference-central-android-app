@@ -16,6 +16,9 @@
 
 package com.udacity.devrel.training.conference.android.common;
 
+import android.content.Intent;
+import android.os.Bundle;
+
 import java.util.Observable;
 
 public abstract class Connection extends Observable {
@@ -58,6 +61,7 @@ public abstract class Connection extends Observable {
 
     public abstract void onActivityResult(int resultCode);
     public abstract String getAccountName();
+    public abstract Intent getAuthToken();
 
     protected abstract void onSignUp();
     protected abstract void onSignIn();

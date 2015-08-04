@@ -16,18 +16,25 @@
 
 package com.udacity.devrel.training.conference.android.common;
 
+import android.accounts.AccountManager;
 import android.app.Activity;
+import android.content.Intent;
 import android.content.IntentSender;
 import android.os.AsyncTask;
 import android.os.Bundle;
 
+import com.google.android.gms.auth.GoogleAuthException;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.GoogleApiClient.ConnectionCallbacks;
 import com.google.android.gms.common.api.GoogleApiClient.OnConnectionFailedListener;
 import com.google.android.gms.common.api.Scope;
 import com.google.android.gms.plus.Plus;
+import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential;
+import com.udacity.devrel.training.conference.android.AppConstants;
+import com.udacity.devrel.training.conference.android.R;
 
+import java.io.IOException;
 import java.lang.ref.WeakReference;
 
 public class GoogleConnection extends Connection
@@ -115,7 +122,8 @@ public class GoogleConnection extends Connection
 
     @Override
     public void onConnected(Bundle connectionHint) {
-        get.execute();
+        GetAuthTokenTask getAuthTokenTask = new GetAuthTokenTask();
+        getAuthTokenTask.execute();
     }
 
     @Override
@@ -154,15 +162,46 @@ public class GoogleConnection extends Connection
                 .addScope(new Scope("email")).build();
     }
 
-    private AsyncTask<Void, Void, String> get = new AsyncTask<Void, Void, String>() {
+    private class GetAuthTokenTask extends AsyncTask<Void, Void, String> {
         @Override
         protected String doInBackground(Void... params) {
-            return null;
+            GoogleAccountCredential credential = GoogleAccountCredential
+                    .usingAudience(mGoogleApiClient.getContext(), AppConstants.AUDIENCE)
+                    .setSelectedAccountName(Plus.AccountApi.getAccountName(mGoogleApiClient));
+
+            try {
+                return credential.getToken();
+            } catch (GoogleAuthException e) {
+                return null;
+            } catch (IOException e) {
+                return null;
+            }
+
         }
 
         @Override
-        protected void onPostExecute(String s) {
-            changeState(State.OPENED);
+        protected void onPostExecute(String accessToken) {
+            if (null == accessToken) {
+                changeState(State.CLOSED);
+                bundle = null;
+            } else {
+                bundle = new Bundle();
+                bundle.putString(AccountManager.KEY_ACCOUNT_NAME, Plus.AccountApi.getAccountName(mGoogleApiClient));
+                bundle.putString(AccountManager.KEY_ACCOUNT_TYPE, mGoogleApiClient.getContext().getString(R.string.auth_token_type));
+                bundle.putString(AccountManager.KEY_AUTHTOKEN, accessToken);
+
+                changeState(State.OPENED);
+            }
+
         }
-    };
+    }
+
+    private Bundle bundle;
+
+    public Intent getAuthToken() {
+        Intent intent = new Intent();
+        intent.putExtras(bundle);
+        return intent;
+    }
+
 }

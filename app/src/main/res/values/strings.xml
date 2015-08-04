@@ -33,6 +33,8 @@
     <string name="hello_world">Hello world!</string>
 
     <string name="auth_token_type">com.udacity.devrel.training.conference</string>
+    <string name="account_type">@string/auth_token_type</string>
     <string name="title_activity_splash">SplashActivity</string>
     <string name="account_name_key">account</string>
+    <string name="error_add_account">Conference Central account already added</string>
 </resources>
