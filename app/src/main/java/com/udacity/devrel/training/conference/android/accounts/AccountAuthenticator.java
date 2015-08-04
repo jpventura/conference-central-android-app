@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 package com.udacity.devrel.training.conference.android.accounts;
 
 import android.accounts.AbstractAccountAuthenticator;
@@ -27,15 +26,10 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 
-
-import com.google.android.gms.auth.GoogleAuthException;
-import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential;
 import com.udacity.devrel.training.conference.android.R;
 import com.udacity.devrel.training.conference.android.common.Connection;
 import com.udacity.devrel.training.conference.android.common.GoogleConnection;
 import com.udacity.devrel.training.conference.android.presenter.LoginPresenter;
-
-import java.io.IOException;
 
 public class AccountAuthenticator extends AbstractAccountAuthenticator {
 
@@ -116,30 +110,16 @@ public class AccountAuthenticator extends AbstractAccountAuthenticator {
             return bundle;
         }
 
-//        Bundle bundle = (null == options) ? new Bundle() : options;
-//        bundle.putString(AccountManager.KEY_ACCOUNT_NAME, account.name);
-//        bundle.putString(AccountManager.KEY_ACCOUNT_TYPE, account.type);
-        // String authToken = mConnection.getAuthToken(account);
         Bundle authToken = mConnection.getToken(account);
-
-        if (null != authToken) {
-            authToken.putAll(options);
-            return authToken;
+        if (null == authToken) {
+            return addAccount(response, account.type, authTokenType, null, options);
         }
 
-        return addAccount(response, account.type, authTokenType, null, options);
-//
-//
-//        return (null == result) ? addAccount(response, account.type, authTokenType, null, options) : result;
-//        if (null == authToken) {
-//            final Intent intent = new Intent(mContext, LoginPresenter.class);
-//            intent.putExtra(AccountManager.KEY_ACCOUNT_AUTHENTICATOR_RESPONSE, response);
-//            bundle.putParcelable(AccountManager.KEY_INTENT, intent);
-//        } else {
-//            bundle.putString(AccountManager.KEY_AUTHTOKEN, authToken);
-//        }
-//
-//        return bundle;
+        if (null != options) {
+            authToken.putAll(options);
+        }
+
+        return authToken;
     }
 
     @Override
@@ -160,4 +140,5 @@ public class AccountAuthenticator extends AbstractAccountAuthenticator {
     private String getAuthTokenType() {
         return mContext.getString(R.string.auth_token_type);
     }
+
 }
