@@ -19,9 +19,11 @@ package com.udacity.devrel.training.conference.android.common;
 import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.app.Activity;
+import android.content.Context;
 import android.content.IntentSender;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Log;
 
 import com.google.android.gms.auth.GoogleAuthException;
 import com.google.android.gms.common.ConnectionResult;
@@ -31,7 +33,9 @@ import com.google.android.gms.common.api.GoogleApiClient.OnConnectionFailedListe
 import com.google.android.gms.common.api.Scope;
 import com.google.android.gms.plus.Plus;
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential;
+import com.udacity.devrel.training.conference.android.AppConstants;
 import com.udacity.devrel.training.conference.android.R;
+import com.udacity.devrel.training.conference.android.accounts.OAuthAccount;
 
 import java.io.IOException;
 import java.lang.ref.WeakReference;
@@ -45,7 +49,7 @@ public class GoogleConnection extends Connection
     private GoogleApiClient mGoogleApiClient;
     private GoogleAccountCredential mGoogleAccountCredential;
     private ConnectionResult connectionResult;
-    private String mWebClientId;
+    private String mAudience;
 
     public static Connection getInstance(Activity activity) {
         if (null == sGoogleConnection) {
@@ -80,7 +84,11 @@ public class GoogleConnection extends Connection
     }
 
     public void onSignIn() {
-        if (!mGoogleApiClient.isConnected() && !mGoogleApiClient.isConnecting()) {
+        if (mGoogleApiClient.isConnected()) {
+            mGoogleApiClient.disconnect();
+        }
+
+        if (!mGoogleApiClient.isConnecting()) {
             mGoogleApiClient.connect();
         }
     }
@@ -113,7 +121,7 @@ public class GoogleConnection extends Connection
     private GoogleConnection(Activity activity) {
         changeState(State.CLOSED);
         activityWeakReference = new WeakReference<>(activity);
-        mWebClientId = activity.getString(R.string.web_client_id);
+        mAudience = AppConstants.AUDIENCE;
         mGoogleApiClient = buildGoogleApiClient();
         mGoogleApiClient.connect();
     }
@@ -122,11 +130,16 @@ public class GoogleConnection extends Connection
         return Plus.AccountApi.getAccountName(mGoogleApiClient);
     }
 
+    public String getAccountType() {
+        return mGoogleApiClient.getContext().getString(R.string.auth_token_type);
+    }
+
     @Override
     public void onConnected(Bundle connectionHint) {
         mGoogleAccountCredential = GoogleAccountCredential
-                .usingAudience(mGoogleApiClient.getContext(), mWebClientId)
-                .setSelectedAccountName(Plus.AccountApi.getAccountName(mGoogleApiClient));
+                .usingAudience(mGoogleApiClient.getContext(), mAudience)
+                .setSelectedAccountName(getAccountName());
+
         changeState(State.OPENED);
     }
 
@@ -140,13 +153,14 @@ public class GoogleConnection extends Connection
 
     @Override
     public void onConnectionFailed(ConnectionResult result) {
+        mGoogleAccountCredential = null;
+
         if (state.equals(State.CLOSED) && result.hasResolution()) {
             changeState(State.CREATED);
             connectionResult = result;
         } else {
             connect();
         }
-        mGoogleAccountCredential = null;
     }
 
     public void onActivityResult(int resultCode) {
@@ -160,50 +174,62 @@ public class GoogleConnection extends Connection
     }
 
     private GoogleApiClient buildGoogleApiClient() {
-        return new GoogleApiClient.Builder(activityWeakReference.get())
+        Context context = activityWeakReference.get().getApplicationContext();
+
+        GoogleApiClient.Builder builder = new GoogleApiClient.Builder(context)
                 .addConnectionCallbacks(this)
                 .addOnConnectionFailedListener(this)
                 .addApi(Plus.API, Plus.PlusOptions.builder().build())
-                .addScope(new Scope("email")).build();
+                .addScope(new Scope("email"));
+
+        return builder.build();
     }
 
     @Override
-    public String getAuthToken(Account account) {
-        if (!account.name.equals(Plus.AccountApi.getAccountName(mGoogleApiClient))) {
-            return null;
-        }
-
+    public OAuthAccount getAccount() {
         try {
-            return mGoogleAccountCredential.getToken();
+            String name = Plus.AccountApi.getAccountName(mGoogleApiClient);
+            String type = mGoogleApiClient.getContext().getString(R.string.auth_token_type);
+            String token = mGoogleAccountCredential.getToken();
+            return new OAuthAccount(name, type, token);
         } catch (GoogleAuthException e) {
             return null;
-        } catch (IOException e) {
+        } catch (IllegalArgumentException e) {
+            return null;
+        }catch (IOException e) {
             return null;
         }
     }
 
     @Override
-    public Bundle getToken(Account account) {
+    public Bundle getToken(Account account, Bundle options) {
         String authToken;
 
+        if (!mGoogleApiClient.isConnected()) {
+            Log.e("ventura", "nao connectado");
+            return null;
+        }
+
         if (!account.name.equals(Plus.AccountApi.getAccountName(mGoogleApiClient))) {
+            Log.e("ventura", "nao sei");
             return null;
         }
 
         try {
             authToken = mGoogleAccountCredential.getToken();
         } catch (GoogleAuthException e) {
+            Log.e("ventura", "GoogleAuthException");
             return null;
         } catch (IOException e) {
+            Log.e("ventura", "IOException");
             return null;
         }
 
         if (!TextUtils.isEmpty(authToken)) {
-            Bundle bundle = new Bundle();
+            Bundle bundle = (null == options) ? new Bundle() : options;
             bundle.putString(AccountManager.KEY_ACCOUNT_NAME, account.name);
             bundle.putString(AccountManager.KEY_ACCOUNT_TYPE, account.type);
             bundle.putString(AccountManager.KEY_AUTHTOKEN, authToken);
-
             return bundle;
         }
 

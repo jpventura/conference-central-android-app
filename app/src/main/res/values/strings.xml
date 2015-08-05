@@ -37,4 +37,5 @@
     <string name="title_activity_splash">SplashActivity</string>
     <string name="account_name_key">account</string>
     <string name="error_add_account">Conference Central account already added</string>
+
 </resources>

@@ -41,11 +41,19 @@
             android:name=".presenter.LoginPresenter"
             android:label="@string/app_name">
         </activity>
+
+        <activity
+            android:name=".accounts.AuthenticatorActivity"
+            android:label="@string/app_name"
+            android:screenOrientation="portrait" >
+        </activity>
+
         <activity
             android:name=".MainActivity"
             android:label="@string/app_name"
             android:screenOrientation="portrait" >
         </activity>
+
         <activity
             android:name=".presenter.ProfilePresenter"
             android:label="@string/title_activity_account_presenter"

@@ -20,6 +20,8 @@ import android.accounts.Account;
 import android.content.Intent;
 import android.os.Bundle;
 
+import com.udacity.devrel.training.conference.android.accounts.OAuthAccount;
+
 import java.util.Observable;
 
 public abstract class Connection extends Observable {
@@ -42,6 +44,9 @@ public abstract class Connection extends Observable {
             }
         },
         OPENED {
+            void connect(Connection connection) {
+                connection.onSignIn();
+            }
             void disconnect(Connection connection) {
                 connection.onSignOut();
             }
@@ -61,8 +66,9 @@ public abstract class Connection extends Observable {
     }
 
     public abstract void onActivityResult(int resultCode);
-    public abstract String getAuthToken(Account account);
-    public abstract Bundle getToken(Account account);
+    public abstract Bundle getToken(Account account, Bundle options);
+
+    public abstract OAuthAccount getAccount();
 
     protected abstract void onSignUp();
     protected abstract void onSignIn();
@@ -85,6 +91,14 @@ public abstract class Connection extends Observable {
         this.state = state;
         setChanged();
         notifyObservers(state);
+    }
+
+    public State getState() {
+        return state;
+    }
+
+    public boolean isOpened() {
+        return state.equals(State.OPENED);
     }
 
     protected State state;

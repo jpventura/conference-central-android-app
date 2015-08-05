@@ -49,7 +49,6 @@ public class LoginPresenter extends AccountAuthenticatorActivity implements Logi
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         assertAccountIsUnique();
         loginView = (LoginView) View.inflate(this, R.layout.view_login, null);
         loginView.setOnLoginListener(this);
@@ -57,41 +56,7 @@ public class LoginPresenter extends AccountAuthenticatorActivity implements Logi
         connection = GoogleConnection.getInstance(this);
         connection.addObserver(this);
 
-        final AccountManager am = AccountManager.get(this);
-        String name = "joao.ventura@gmail.com";
-        String type = getString(R.string.auth_token_type);
-        final AccountManagerFuture<Bundle> future = am.getAuthToken(new Account(name, type), type, null, LoginPresenter.this, null, null);
 
-//        AsyncTask<Void, Void, Bundle> xxx = new AsyncTask<Void, Void, Bundle>() {
-//            @Override
-//            protected Bundle doInBackground(Void... params) {
-//                try {
-//                    return future.getResult();
-//                } catch(OperationCanceledException e) {
-//                    Bundle bundle = new Bundle();
-//                    bundle.putString("porra", "OperationCanceledException");
-//                    bundle.putString(AccountManager.KEY_ERROR_MESSAGE, e.getMessage());
-//                    return bundle;
-//                } catch (AuthenticatorException e) {
-//                    Bundle bundle = new Bundle();
-//                    bundle.putString("porra", "AuthenticatorException");
-//                    bundle.putString(AccountManager.KEY_ERROR_MESSAGE, e.getMessage());
-//                    return bundle;
-//                } catch (IOException e) {
-//                    Bundle bundle = new Bundle();
-//                    bundle.putString("porra", "IOException");
-//                    bundle.putString(AccountManager.KEY_ERROR_MESSAGE, e.getMessage());
-//                    return bundle;
-//                }
-//            }
-//
-//            @Override
-//            protected void onPostExecute(Bundle bundle) {
-//                Log.e("ventura", "bundle " + bundle.toString());
-//            }
-//        };
-//
-//        xxx.execute();
     }
 
     @Override
@@ -122,12 +87,12 @@ public class LoginPresenter extends AccountAuthenticatorActivity implements Logi
         if (observable != connection) {
             return;
         }
-
-        if (State.OPENED.equals(data)) {
-
-            setResult(RESULT_OK, connection.getAuthToken());
-            finish();
-        }
+//
+//        if (State.OPENED.equals(data)) {
+//
+//            setResult(RESULT_OK, connection.getAuthToken());
+//            finish();
+//        }
     }
 
     private void assertAccountIsUnique() {

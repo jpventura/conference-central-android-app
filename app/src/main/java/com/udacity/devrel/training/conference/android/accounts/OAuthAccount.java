@@ -66,6 +66,7 @@ public class OAuthAccount extends Account implements Parcelable {
         }
     };
 
+    @Override
     public String toString() {
         return "Account {name=" + name + ", type=" + type + ", token=" + token + "}";
     }

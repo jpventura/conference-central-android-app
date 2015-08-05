@@ -48,11 +48,13 @@ android {
         debug {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            resValue "string", "web_client_id", "532047971966-1fot6c0tgkcrem1hpnjpa4k8ip70omc1.apps.googleusercontent.com"
             signingConfig signingConfigs.debug
         }
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            resValue "string", "web_client_id", "532047971966-1fot6c0tgkcrem1hpnjpa4k8ip70omc1.apps.googleusercontent.com"
             signingConfig signingConfigs.release
         }
     }

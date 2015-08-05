@@ -31,13 +31,13 @@ public class SplashActivity extends AccountAuthenticatorActivity {
         String name = sharedPreferences.getString(getString(R.string.account_name_key), null);
         String type = getString(R.string.auth_token_type);
 
-        if (null == name) {
-            AddAccountTask addAccountTask = new AddAccountTask();
-            addAccountTask.execute(type);
-        } else {
-            GetAuthTokenTask getAuthTokenTask = new GetAuthTokenTask();
-            getAuthTokenTask.execute(new Account(name, type));
-        }
+//        if (null == name) {
+//            AddAccountTask addAccountTask = new AddAccountTask();
+//            addAccountTask.execute(type);
+//        } else {
+//            GetAuthTokenTask getAuthTokenTask = new GetAuthTokenTask();
+//            getAuthTokenTask.execute(new Account(name, type));
+//        }
     }
 
     @Override

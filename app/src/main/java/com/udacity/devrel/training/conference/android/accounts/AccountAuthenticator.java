@@ -24,12 +24,10 @@ import android.accounts.NetworkErrorException;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
 
 import com.udacity.devrel.training.conference.android.R;
 import com.udacity.devrel.training.conference.android.common.Connection;
 import com.udacity.devrel.training.conference.android.common.GoogleConnection;
-import com.udacity.devrel.training.conference.android.presenter.LoginPresenter;
 
 public class AccountAuthenticator extends AbstractAccountAuthenticator {
 
@@ -48,7 +46,6 @@ public class AccountAuthenticator extends AbstractAccountAuthenticator {
                              String authTokenType,
                              String[] requiredFeatures,
                              Bundle options) throws NetworkErrorException {
-        Log.e("ventura", "addAccount 1");
         Bundle bundle = (null == options) ? new Bundle() : options;
 
         if ((null == accountType) && (null == authTokenType)) {
@@ -56,30 +53,11 @@ public class AccountAuthenticator extends AbstractAccountAuthenticator {
             return bundle;
         }
 
-//        Log.e("ventura", "addAccount 11");
-//        final AccountManager accountManager = AccountManager.get(mContext);
-//        if (accountManager.getAccountsByType(accountType).length == 0) {
-//            final String error = mContext.getString(R.string.error_add_account);
-//            bundle.putInt(AccountManager.KEY_ERROR_CODE, AccountManager.ERROR_CODE_BAD_ARGUMENTS);
-//            bundle.putString(AccountManager.KEY_ERROR_MESSAGE, error);
-//            Toast.makeText(mContext, error, Toast.LENGTH_LONG).show();
-//            return bundle;
-//        }
-
-        Log.e("ventura", "addAccount 2");
-//        if (!getAuthTokenType().equals(authTokenType)) {
-//            bundle.putInt(AccountManager.KEY_ERROR_CODE, AccountManager.ERROR_CODE_BAD_ARGUMENTS);
-//            return bundle;
-//        }
-
-        Log.e("ventura", "addAccount 3");
-        final Intent intent = new Intent(mContext, LoginPresenter.class);
+        final Intent intent = new Intent(mContext, AuthenticatorActivity.class);
         intent.putExtra(AccountManager.KEY_ACCOUNT_AUTHENTICATOR_RESPONSE, response);
         intent.putExtra(AccountManager.KEY_ACCOUNT_TYPE, accountType);
-
         bundle.putParcelable(AccountManager.KEY_INTENT, intent);
 
-        Log.e("ventura", "addAccount 4");
         return bundle;
     }
 
@@ -98,28 +76,34 @@ public class AccountAuthenticator extends AbstractAccountAuthenticator {
                                Account account,
                                String authTokenType,
                                Bundle options) throws NetworkErrorException {
+        Bundle bundle = (null == options) ? new Bundle() : options;
+        Bundle authToken = null;
+
         if ((null == account) && (null == authTokenType)) {
-            Bundle bundle = new Bundle();
             bundle.putInt(AccountManager.KEY_ERROR_CODE, AccountManager.ERROR_CODE_BAD_REQUEST);
             return bundle;
         }
 
         if (!getAuthTokenType().equals(authTokenType)) {
-            Bundle bundle = new Bundle();
             bundle.putInt(AccountManager.KEY_ERROR_CODE, AccountManager.ERROR_CODE_BAD_ARGUMENTS);
             return bundle;
         }
 
-        Bundle authToken = mConnection.getToken(account);
-        if (null == authToken) {
-            return addAccount(response, account.type, authTokenType, null, options);
+        if ((null != mConnection) && mConnection.isOpened()){
+            authToken = mConnection.getToken(account, options);
         }
 
-        if (null != options) {
-            authToken.putAll(options);
+        if (null != authToken) {
+            return authToken;
         }
 
-        return authToken;
+        final Intent intent = new Intent(mContext, AuthenticatorActivity.class);
+        intent.putExtra(AccountManager.KEY_ACCOUNT_AUTHENTICATOR_RESPONSE, response);
+        intent.putExtra(AccountManager.KEY_ACCOUNT_NAME, account.name);
+        intent.putExtra(AccountManager.KEY_ACCOUNT_TYPE, account.type);
+        bundle.putParcelable(AccountManager.KEY_INTENT, intent);
+
+        return bundle;
     }
 
     @Override

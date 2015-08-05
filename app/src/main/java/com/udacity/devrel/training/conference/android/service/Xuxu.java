@@ -1,7 +1,10 @@
 package com.udacity.devrel.training.conference.android.service;
 
+import com.google.android.gms.plus.Account;
+
 public class Xuxu {
 
+    Account x;
     enum Test {
         ZERO, ONE, TWO;
 
