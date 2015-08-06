@@ -27,10 +27,10 @@ import com.udacity.devrel.training.conference.android.common.GoogleConnection;
 
 import java.lang.ref.WeakReference;
 
-public class AddAccountCommand extends AsyncTask<Void, Void, OAuthAccount> {
+public class AddAccountTask extends AsyncTask<Void, Void, OAuthAccount> {
     private WeakReference<AccountAuthenticatorActivity> mActivity;
 
-    public AddAccountCommand(AccountAuthenticatorActivity activity) {
+    public AddAccountTask(AccountAuthenticatorActivity activity) {
         mActivity = new WeakReference<>(activity);
     }
 
@@ -41,39 +41,28 @@ public class AddAccountCommand extends AsyncTask<Void, Void, OAuthAccount> {
 
     @Override
     protected void onPostExecute(OAuthAccount account) {
-        setAccountAuthenticatorResult(account);
-        mActivity.get().finish();
-    }
-
-    private void setAccountAuthenticatorResult(OAuthAccount account) {
-        Bundle bundle;
-        Intent intent;
-        int resultCode;
-
         if (null == account) {
-            bundle = null;
-            intent = null;
-            resultCode = AccountAuthenticatorActivity.RESULT_CANCELED;
+            mActivity.get().setAccountAuthenticatorResult(null);
+            mActivity.get().setResult(AccountAuthenticatorActivity.RESULT_CANCELED, null);
         } else {
             addAccountExplicitly(account);
-
-            Parcel in = Parcel.obtain();
-            account.writeToParcel(in, 0);
-            bundle = Bundle.CREATOR.createFromParcel(in);
-
-            intent = new Intent();
-            intent.putExtras(bundle);
-
-            resultCode = AccountAuthenticatorActivity.RESULT_OK;
         }
 
-        mActivity.get().setAccountAuthenticatorResult(bundle);
-        mActivity.get().setResult(resultCode, intent);
+        mActivity.get().finish();
     }
 
     private void addAccountExplicitly(OAuthAccount account) {
         final AccountManager accountManager = AccountManager.get(mActivity.get());
         accountManager.addAccountExplicitly(account, null, null);
         accountManager.setAuthToken(account, account.type, account.token);
+
+        Parcel in = Parcel.obtain();
+        account.writeToParcel(in, 0);
+        Bundle bundle = Bundle.CREATOR.createFromParcel(in);
+        Intent intent = new Intent();
+        intent.putExtras(bundle);
+
+        mActivity.get().setAccountAuthenticatorResult(bundle);
+        mActivity.get().setResult(AccountAuthenticatorActivity.RESULT_OK, intent);
     }
 }

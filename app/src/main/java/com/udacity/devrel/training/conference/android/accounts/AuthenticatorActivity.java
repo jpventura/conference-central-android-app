@@ -77,10 +77,14 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity
 
     @Override
     public void update(Observable observable, Object data) {
-        if ((observable == mConnection) && Connection.State.OPENED.equals(data)){
-            AddAccountCommand command = new AddAccountCommand(this);
-            command.execute();
+        if ((observable == mConnection) && Connection.State.OPENED.equals(data)) {
+            addAccountInBackground();
         }
+    }
+
+    private void addAccountInBackground() {
+        AddAccountTask addAccountTask = new AddAccountTask(this);
+        addAccountTask.execute();
     }
 
     private boolean isAccountUnique() {
