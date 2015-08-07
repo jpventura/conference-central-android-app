@@ -290,4 +290,5 @@ public class MainActivity extends ActionBarActivity implements Observer {
         }
         mConferenceListFragment.loadConferences();
     }
+
 }
